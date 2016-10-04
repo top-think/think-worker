@@ -22,6 +22,8 @@ class Worker extends Server
 }
 ~~~
 
+支持workerman所有的回调方法定义（回调方法必须是public类型）
+
 > 注意该示例使用了User模型操作仅仅作为参考。
 
 在命令行启动服务端
