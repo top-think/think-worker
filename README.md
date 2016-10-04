@@ -1,6 +1,9 @@
 ThinkPHP 5.0 Workerman 扩展
 ===============
 
+## 安装
+composer require topthink/think-worker
+
 ## 使用方法
 首先创建控制器类并继承 think\worker\Server，然后设置属性和添加回调方法
 
