@@ -43,5 +43,11 @@ require __DIR__ . '/thinkphp/start.php';
 php server.php start
 ~~~
 
+
+linux下面可以支持下面指令
+~~~
+php server.php start|stop|status|restart|reload
+~~~
+
 在浏览器中进行客户端测试
 http://127.0.0.1:2346/?id=1
