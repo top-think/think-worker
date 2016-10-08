@@ -44,21 +44,12 @@ abstract class Server
                 $this->worker->$event = [$this, $event];
             }
         }
-    }
-
-    protected function init()
-    {
-    }
-
-    public function start()
-    {
         // Run worker
         Worker::runAll();
     }
 
-    public function stop()
+    protected function init()
     {
-        Worker::stopAll();
     }
 
 }

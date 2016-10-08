@@ -11,7 +11,6 @@ composer require topthink/think-worker
 namespace app\index\controller;
 
 use think\worker\Server;
-use app\index\model\User;
 
 class Worker extends Server
 {
@@ -19,19 +18,29 @@ class Worker extends Server
 
 	public function onMessage($connection,$data)
 	{
-		$user = User::get($data['get']['id']);
-		$connection->send(json_encode($user));
+		$connection->send(json_encode($data));
 	}
 }
 ~~~
-
 支持workerman所有的回调方法定义（回调方法必须是public类型）
 
-> 注意该示例使用了User模型操作仅仅作为参考。
+
+在应用根目录增加入口文件 server.php
+
+~~~
+#!/usr/bin/env php
+<?php
+define('APP_PATH', __DIR__ . '/application/');
+
+define('BIND_MODULE','index/Worker');
+
+// 加载框架引导文件
+require __DIR__ . '/thinkphp/start.php';
+~~~
 
 在命令行启动服务端
 ~~~
-php index.php index/Worker/start
+php server.php start
 ~~~
 
 在浏览器中进行客户端测试
