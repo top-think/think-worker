@@ -11,6 +11,8 @@
 
 namespace think\worker;
 
+use think\App;
+
 /**
  * Worker应用对象
  */
@@ -19,20 +21,31 @@ class Application extends App
     /**
      * 处理Worker请求 在run方法之前调用
      * @access public
-     * @param  $this
+     * @param  \Workerman\Connection\TcpConnection   $connection
+     * @param  void
      */
-    public function worker()
+    public function worker($connection)
     {
-        // 重置应用的开始时间和内存占用
-        $this->beginTime = microtime(true);
-        $this->beginMem  = memory_get_usage();
+        try {
+            // 重置应用的开始时间和内存占用
+            $this->beginTime = microtime(true);
+            $this->beginMem  = memory_get_usage();
 
-        // 销毁当前请求对象实例
-        $this->delete('think\Request');
+            // 销毁当前请求对象实例
+            $this->delete('think\Request');
 
-        // 更新请求对象实例
-        $this->route->setRequest($this->request);
+            $this->request->setPathinfo(strpos($_SERVER['REQUEST_URI'], '?') ? strstr($_SERVER['REQUEST_URI'], '?', true) : $_SERVER['REQUEST_URI']);
 
-        return $this;
+            // 更新请求对象实例
+            $this->route->setRequest($this->request);
+
+            ob_start();
+            $this->run()->send();
+            $content = ob_get_clean();
+            $connection->send($content);
+        } catch (\Exception $e) {
+            $connection->send($e->getMessage());
+        }
     }
+
 }
