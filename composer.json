@@ -9,7 +9,8 @@
         }
     ],
     "require": {
-	"workerman/workerman":"^3.3.0"
+	"workerman/workerman":"^3.3.0",
+	"topthink/framework":"5.1.*"
     },
     "autoload": {
         "psr-4": {
