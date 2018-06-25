@@ -63,16 +63,16 @@ http://127.0.0.1:2346/?id=1
 <?php
 require __DIR__ . '/thinkphp/base.php';
 
+use think\worker\Application;
 use think\worker\Server;
 
 class Http extends Server
 {
-
     protected $app;
 
     public function onWorkerStart($worker)
     {
-        $this->app = new think\worker\Application;
+        $this->app = new Application;
         $this->app->initialize();
     }
 
