@@ -57,43 +57,9 @@ http://127.0.0.1:2346/?id=1
 
 ### HttpServer
 
-在应用根目录创建server.php
-
-~~~
-<?php
-require __DIR__ . '/thinkphp/base.php';
-
-use think\worker\Application;
-use think\worker\Server;
-
-class Http extends Server
-{
-    protected $app;
-    protected $host = '0.0.0.0';
-    protected $port = 2345;
-    protected $option = [
-    	'count'	=>	4
-    ];
-
-    public function onWorkerStart($worker)
-    {
-        $this->app = new Application;
-        $this->app->initialize();
-    }
-
-    public function onMessage($connection, $data)
-    {
-        $this->app->worker($connection, $data);
-    }
-
-}
-
-new Http();
-~~~
-
 在命令行启动服务端
 ~~~
-php server.php
+php think worker
 ~~~
 
 由于onWorkerStart运行的时候没有HTTP_HOST，因此最好在应用配置文件中设置app_host
