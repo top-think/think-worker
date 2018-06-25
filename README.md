@@ -69,6 +69,11 @@ use think\worker\Server;
 class Http extends Server
 {
     protected $app;
+    protected $host = '0.0.0.0';
+    protected $port = 2345;
+    protected $option = [
+    	'count'	=>	4
+    ];
 
     public function onWorkerStart($worker)
     {
@@ -90,3 +95,5 @@ new Http();
 ~~~
 php server.php
 ~~~
+
+由于onWorkerStart运行的时候没有HTTP_HOST，因此最好在应用配置文件中设置app_host

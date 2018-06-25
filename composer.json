@@ -17,6 +17,7 @@
             "think\\worker\\": "src"
         },
         "files": [
+            "src/config.php"
         ]
     }
 }
