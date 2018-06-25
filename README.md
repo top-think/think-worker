@@ -1,10 +1,13 @@
-ThinkPHP 5.0 Workerman 扩展
+ThinkPHP 5.1 Workerman 扩展
 ===============
 
 ## 安装
 composer require topthink/think-worker
 
 ## 使用方法
+
+### SocketServer
+
 首先创建控制器类并继承 think\worker\Server，然后设置属性和添加回调方法
 
 ~~~
@@ -51,3 +54,39 @@ php server.php start|stop|status|restart|reload
 
 在浏览器中进行客户端测试
 http://127.0.0.1:2346/?id=1
+
+### HttpServer
+
+在应用根目录创建server.php
+
+~~~
+<?php
+require __DIR__ . '/thinkphp/base.php';
+
+use think\worker\Server;
+
+class Http extends Server
+{
+
+    protected $app;
+
+    public function onWorkerStart($worker)
+    {
+        $this->app = new think\worker\Application;
+        $this->app->initialize();
+    }
+
+    public function onMessage($connection, $data)
+    {
+        $this->app->worker($connection, $data);
+    }
+
+}
+
+new Http();
+~~~
+
+在命令行启动服务端
+~~~
+php server.php
+~~~

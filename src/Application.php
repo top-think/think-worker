@@ -27,6 +27,7 @@ class Application extends App
     public function worker($connection)
     {
         try {
+            ob_start();
             // 重置应用的开始时间和内存占用
             $this->beginTime = microtime(true);
             $this->beginMem  = memory_get_usage();
@@ -34,16 +35,20 @@ class Application extends App
             // 销毁当前请求对象实例
             $this->delete('think\Request');
 
-            $this->request->setPathinfo(strpos($_SERVER['REQUEST_URI'], '?') ? strstr($_SERVER['REQUEST_URI'], '?', true) : $_SERVER['REQUEST_URI']);
+            $pathinfo = ltrim(strpos($_SERVER['REQUEST_URI'], '?') ? strstr($_SERVER['REQUEST_URI'], '?', true) : $_SERVER['REQUEST_URI'], '/');
+
+            $this->request->setPathinfo($pathinfo);
 
             // 更新请求对象实例
             $this->route->setRequest($this->request);
 
-            ob_start();
             $this->run()->send();
             $content = ob_get_clean();
+
             $connection->send($content);
         } catch (\Exception $e) {
+            $connection->send($e->getMessage());
+        } catch (\Throwable $e) {
             $connection->send($e->getMessage());
         }
     }
