@@ -9,10 +9,12 @@
 // | Author: yunwuxin <448901948@qq.com>
 // +----------------------------------------------------------------------
 
-namespace think\swoole\command;
+namespace think\worker\command;
 
 use think\console\Command;
 use think\console\Input;
+use think\console\input\Argument;
+use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\worker\Worker as HttpServer;
@@ -23,14 +25,12 @@ class Worker extends Command
 
     public function configure()
     {
-        $this->setName('swoole')
-            ->addArgument('run', Argument::REQUIRED, "The name of the class")
+        $this->setName('worker')
+            ->addArgument('run', Argument::REQUIRED, "start|stop")
             ->addOption('host', 'H', Option::VALUE_OPTIONAL,
                 'The host to server the application on', '0.0.0.0')
-            ->addOption('port', 'r', Option::VALUE_OPTIONAL,
+            ->addOption('port', 'p', Option::VALUE_OPTIONAL,
                 'The port to server the application on', 2346)
-            ->addOption('path', 'p', Option::VALUE_OPTIONAL,
-                'The document root of the application', App::getRootPath() . 'application')
             ->setDescription('Built-in Workerman HTTP Server for ThinkPHP');
     }
 
@@ -45,9 +45,6 @@ class Worker extends Command
             $this->http = new HttpServer($host, $port);
             $this->http->option($option);
         }
-
-        $output->writeln(sprintf('SwooleServer is started On <http://%s:%s/>', $host, $port));
-        $output->writeln(sprintf('You can exit with <info>`CTRL-C`</info>'));
 
         $run = $input->getArgument('run');
 

@@ -1,9 +1,9 @@
 <?php
-namespace think\swoole;
+namespace think\worker;
 
 use think\worker\Application;
 use think\worker\Server;
-use Workerman\Worker;
+use Workerman\Worker as WorkerServer;
 
 class Worker extends Server
 {
@@ -15,7 +15,7 @@ class Worker extends Server
      */
     public function __construct($host, $port)
     {
-        $this->worker = new Worker('http://' . $host . ':' . $port);
+        $this->worker = new WorkerServer('http://' . $host . ':' . $port);
 
         // 设置回调
         foreach ($this->event as $event) {
@@ -48,11 +48,11 @@ class Worker extends Server
 
     public function start()
     {
-        Worker::runAll();
+        WorkerServer::runAll();
     }
 
     public function stop()
     {
-        Worker::stopAll();
-    }    
+        WorkerServer::stopAll();
+    }
 }
