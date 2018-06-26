@@ -2,11 +2,11 @@
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK IT ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006-2015 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006-2018 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
-// | Author: yunwuxin <448901948@qq.com>
+// | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
 namespace think\worker\command;
@@ -18,11 +18,13 @@ use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\worker\Worker as HttpServer;
+use Workerman\Worker as WorkerServer;
 
+/**
+ * Worker 命令行类
+ */
 class Worker extends Command
 {
-    protected $http;
-
     public function configure()
     {
         $this->setName('worker')
@@ -36,19 +38,21 @@ class Worker extends Command
 
     public function execute(Input $input, Output $output)
     {
-        if (!$this->http) {
+        $run = $input->getArgument('run');
+
+        if ('stop' == $run) {
+            WorkerServer::stopAll();
+        } else {
             $host = $input->getOption('host');
             $port = $input->getOption('port');
 
             $option = Config::pull('worker');
 
-            $this->http = new HttpServer($host, $port);
-            $this->http->option($option);
+            $worker = new HttpServer($host, $port);
+            $worker->option($option);
+
+            $worker->start();
         }
-
-        $run = $input->getArgument('run');
-
-        $this->http->$run();
     }
 
 }

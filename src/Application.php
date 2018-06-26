@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK IT ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006-2014 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006-2018 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -19,7 +19,7 @@ use think\App;
 class Application extends App
 {
     /**
-     * 处理Worker请求 在run方法之前调用
+     * 处理Worker请求
      * @access public
      * @param  \Workerman\Connection\TcpConnection   $connection
      * @param  void
