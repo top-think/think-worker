@@ -18,7 +18,6 @@ use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\worker\Worker as HttpServer;
-use Workerman\Worker as WorkerServer;
 
 /**
  * Worker 命令行类
@@ -29,30 +28,29 @@ class Worker extends Command
     {
         $this->setName('worker')
             ->addArgument('run', Argument::OPTIONAL, "start|stop", 'start')
-            ->addOption('host', 'H', Option::VALUE_OPTIONAL,
-                'The host to server the application on', '0.0.0.0')
-            ->addOption('port', 'p', Option::VALUE_OPTIONAL,
-                'The port to server the application on', 2346)
-            ->setDescription('Built-in Workerman HTTP Server for ThinkPHP');
+            ->setDescription('Workerman HTTP Server for ThinkPHP');
     }
 
     public function execute(Input $input, Output $output)
     {
         $run = $input->getArgument('run');
 
-        if ('stop' == $run) {
-            WorkerServer::stopAll();
-        } else {
-            $host = $input->getOption('host');
-            $port = $input->getOption('port');
-
-            $option = Config::pull('worker');
-
-            $worker = new HttpServer($host, $port);
-            $worker->option($option);
-
-            $worker->start();
+        if (DIRECTORY_SEPARATOR !== '\\') {
+            global $argv;
+            array_shift($argv);
+            array_shift($argv);
+            array_unshift($argv, 'think', $run);
         }
+
+        $option = Config::pull('worker');
+
+        $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
+        $port = !empty($option['port']) ? $option['port'] : 2346;
+
+        $worker = new HttpServer($host, $port);
+        $worker->option($option);
+
+        $worker->start();
     }
 
 }
