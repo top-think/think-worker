@@ -10,8 +10,6 @@
 // +----------------------------------------------------------------------
 namespace think\worker;
 
-use think\worker\Application;
-use think\worker\Server;
 use Workerman\Worker as WorkerServer;
 
 /**
