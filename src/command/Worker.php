@@ -14,7 +14,6 @@ namespace think\worker\command;
 use think\console\Command;
 use think\console\Input;
 use think\console\input\Argument;
-use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\worker\Worker as HttpServer;
