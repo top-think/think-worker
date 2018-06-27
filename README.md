@@ -33,7 +33,6 @@ class Worker extends Server
 ~~~
 #!/usr/bin/env php
 <?php
-define('APP_PATH', __DIR__ . '/application/');
 
 define('BIND_MODULE','index/Worker');
 
@@ -60,6 +59,11 @@ http://127.0.0.1:2346/?id=1
 在命令行启动服务端
 ~~~
 php think worker
+~~~
+
+linux下面可以支持下面指令
+~~~
+php think worker [start|stop|reload|restart|status]
 ~~~
 
 由于onWorkerStart运行的时候没有HTTP_HOST，因此最好在应用配置文件中设置app_host
