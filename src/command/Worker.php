@@ -27,21 +27,30 @@ class Worker extends Command
     public function configure()
     {
         $this->setName('worker')
-            ->addArgument('run', Argument::OPTIONAL, "start|stop", 'start')
+            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
             ->setDescription('Workerman HTTP Server for ThinkPHP');
     }
 
     public function execute(Input $input, Output $output)
     {
-        $run = $input->getArgument('run');
+        $action = $input->getArgument('action');
 
         if (DIRECTORY_SEPARATOR !== '\\') {
+            if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
+                $output->writeln("Invalid argument action:{$action}, Expected start|stop|restart|reload|status .");
+                exit(1);
+            }
+
             global $argv;
             array_shift($argv);
             array_shift($argv);
-            array_unshift($argv, 'think', $run);
+            array_unshift($argv, 'think', $action);
+        } elseif ('start' != $action) {
+            $output->writeln("Not Support action:{$action} on Windows.");
+            exit(1);
         }
 
+        $output->writeln('Starting Workerman http server...');
         $option = Config::pull('worker');
 
         $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
@@ -49,6 +58,11 @@ class Worker extends Command
 
         $worker = new HttpServer($host, $port);
         $worker->option($option);
+
+        if (DIRECTORY_SEPARATOR == '\\') {
+            $output->writeln("Workerman http server started: <http://{$host}:{$port}>");
+            $output->writeln('You can exit with <info>`CTRL-C`</info>');
+        }
 
         $worker->start();
     }
