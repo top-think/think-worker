@@ -12,6 +12,7 @@
 namespace think\worker;
 
 use think\App;
+use think\exception\HttpException;
 use Workerman\Protocols\Http;
 
 /**
@@ -47,17 +48,32 @@ class Application extends App
             $response->send();
             $content = ob_get_clean();
 
+            $this->httpResponseCode($response->getCode());
+
             foreach ($response->getHeader() as $name => $val) {
                 // 发送头部信息
                 Http::header($name . (!is_null($val) ? ':' . $val : ''));
             }
 
             $connection->send($content);
+        } catch (HttpException $e) {
+            $this->exception($connection, $e, 404);
         } catch (\Exception $e) {
-            $connection->send($e->getMessage());
+            $this->exception($connection, $e, 500);
         } catch (\Throwable $e) {
-            $connection->send($e->getMessage());
+            $this->exception($connection, $e, 500);
         }
+    }
+
+    protected function httpResponseCode($code = 200)
+    {
+        Http::header('HTTP/1.1', true, $code);
+    }
+
+    protected function exception($connection, $e, $code)
+    {
+        $this->httpResponseCode($code);
+        $connection->send($e->getMessage());
     }
 
 }
