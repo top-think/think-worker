@@ -24,10 +24,11 @@ class Worker extends Server
      * @access public
      * @param  string $host 监听地址
      * @param  int    $port 监听端口
+     * @param  array  $context 参数
      */
-    public function __construct($host, $port)
+    public function __construct($host, $port, $context = [])
     {
-        $this->worker = new WorkerServer('http://' . $host . ':' . $port);
+        $this->worker = new WorkerServer('http://' . $host . ':' . $port, $context);
 
         // 设置回调
         foreach ($this->event as $event) {

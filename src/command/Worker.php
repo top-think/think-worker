@@ -55,7 +55,19 @@ class Worker extends Command
         $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
         $port = !empty($option['port']) ? $option['port'] : 2346;
 
-        $worker = new HttpServer($host, $port);
+        if (isset($option['context_option'])) {
+            $context = $option['context_option'];
+            unset($option['context_option']);
+        } else {
+            $context = [];
+        }
+
+        $worker = new HttpServer($host, $port, $context);
+
+        if (!empty($option['ssl'])) {
+            $option['transport'] = 'ssl';
+        }
+
         $worker->option($option);
 
         if (DIRECTORY_SEPARATOR == '\\') {
