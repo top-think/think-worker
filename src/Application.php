@@ -12,6 +12,7 @@
 namespace think\worker;
 
 use think\App;
+use Workerman\Protocols\Http;
 
 /**
  * Worker应用对象
@@ -42,8 +43,14 @@ class Application extends App
             // 更新请求对象实例
             $this->route->setRequest($this->request);
 
-            $this->run()->send();
+            $response = $this->run();
+            $response->send();
             $content = ob_get_clean();
+
+            foreach ($response->getHeader() as $name => $val) {
+                // 发送头部信息
+                Http::header($name . (!is_null($val) ? ':' . $val : ''));
+            }
 
             $connection->send($content);
         } catch (\Exception $e) {
