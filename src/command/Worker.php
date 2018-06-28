@@ -68,6 +68,7 @@ class Worker extends Command
             $option['transport'] = 'ssl';
         }
 
+        $worker->name = 'thinkphp';
         $worker->option($option);
 
         if (DIRECTORY_SEPARATOR == '\\') {

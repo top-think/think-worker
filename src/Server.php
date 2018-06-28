@@ -61,4 +61,13 @@ abstract class Server
     {
     }
 
+    public function __set($name, $value)
+    {
+        $this->worker->$name = $value;
+    }
+
+    public function __call($method, $args)
+    {
+        call_user_func_array([$this->worker, $method], $args);
+    }
 }
