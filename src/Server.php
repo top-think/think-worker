@@ -24,6 +24,7 @@ abstract class Server
     protected $host     = '0.0.0.0';
     protected $port     = '2346';
     protected $option   = [];
+    protected $context  = [];
     protected $event    = ['onWorkerStart', 'onConnect', 'onMessage', 'onClose', 'onError', 'onBufferFull', 'onBufferDrain', 'onWorkerReload'];
 
     /**
@@ -33,7 +34,7 @@ abstract class Server
     public function __construct()
     {
         // 实例化 Websocket 服务
-        $this->worker = new Worker($this->socket ?: $this->protocol . '://' . $this->host . ':' . $this->port);
+        $this->worker = new Worker($this->socket ?: $this->protocol . '://' . $this->host . ':' . $this->port, $this->context);
 
         // 设置参数
         if (!empty($this->option)) {
