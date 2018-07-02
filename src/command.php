@@ -9,15 +9,9 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-// +----------------------------------------------------------------------
-// | Workerman设置 php think worker命令行下有效
-// +----------------------------------------------------------------------
-return [
-    // 扩展自身需要的配置
-    'host'  => '0.0.0.0',
-    'port'  => 2346,
+\think\Console::addDefaultCommands(['\\think\\worker\\command\\Worker']);
 
-    // 支持workerman的所有配置参数
-    'name'  => 'thinkphp',
-    'count' => 4,
-];
+\think\Facade::bind([
+    \think\worker\facade\Application::class => \think\worker\Application::class,
+    \think\worker\facade\Worker::class      => \think\worker\Worker::class,
+]);

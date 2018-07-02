@@ -23,6 +23,8 @@ use think\worker\Worker as HttpServer;
  */
 class Worker extends Command
 {
+    protected $config = [];
+
     public function configure()
     {
         $this->setName('worker')
@@ -33,6 +35,8 @@ class Worker extends Command
     public function execute(Input $input, Output $output)
     {
         $action = $input->getArgument('action');
+
+        $this->config = Config::pull('worker');
 
         if (DIRECTORY_SEPARATOR !== '\\') {
             if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
@@ -50,26 +54,24 @@ class Worker extends Command
         }
 
         $output->writeln('Starting Workerman http server...');
-        $option = Config::pull('worker');
 
-        $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
-        $port = !empty($option['port']) ? $option['port'] : 2346;
+        $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+        $port = !empty($this->config['port']) ? $this->config['port'] : 2346;
 
-        if (isset($option['context_option'])) {
-            $context = $option['context_option'];
-            unset($option['context_option']);
+        if (isset($this->config['context_option'])) {
+            $context = $this->config['context_option'];
+            unset($this->config['context_option']);
         } else {
             $context = [];
         }
 
         $worker = new HttpServer($host, $port, $context);
 
-        if (!empty($option['ssl'])) {
-            $option['transport'] = 'ssl';
+        if (!empty($this->config['ssl'])) {
+            $this->config['transport'] = 'ssl';
         }
 
-        $worker->name = 'thinkphp';
-        $worker->option($option);
+        $worker->option($this->config);
 
         if (DIRECTORY_SEPARATOR == '\\') {
             $output->writeln("Workerman http server started: <http://{$host}:{$port}>");
