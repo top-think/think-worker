@@ -10,6 +10,7 @@
 // +----------------------------------------------------------------------
 namespace think\worker;
 
+use think\Facade;
 use Workerman\Worker as WorkerServer;
 
 /**
@@ -18,6 +19,7 @@ use Workerman\Worker as WorkerServer;
 class Worker extends Server
 {
     protected $app;
+    protected $appPath;
 
     /**
      * 架构函数
@@ -36,6 +38,11 @@ class Worker extends Server
                 $this->worker->$event = [$this, $event];
             }
         }
+    }
+
+    public function setAppPath($path)
+    {
+        $this->appPath = $path;
     }
 
     /**
@@ -62,8 +69,18 @@ class Worker extends Server
      */
     public function onWorkerStart($worker)
     {
-        $this->app = new Application;
+        $this->app = new Application($this->appPath);
+
+        Facade::bind([
+            'think\facade\Cookie' => Cookie::class,
+        ]);
+
+        // 应用初始化
         $this->app->initialize();
+
+        $this->app->bindTo([
+            'cookie' => Cookie::class,
+        ]);
     }
 
     /**

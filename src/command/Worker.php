@@ -14,6 +14,7 @@ namespace think\worker\command;
 use think\console\Command;
 use think\console\Input;
 use think\console\input\Argument;
+use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\worker\Worker as HttpServer;
@@ -29,6 +30,7 @@ class Worker extends Command
     {
         $this->setName('worker')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
+            ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
             ->setDescription('Workerman HTTP Server for ThinkPHP');
     }
 
@@ -67,10 +69,28 @@ class Worker extends Command
 
         $worker = new HttpServer($host, $port, $context);
 
-        if (!empty($this->config['ssl'])) {
-            $this->config['transport'] = 'ssl';
+        // 设置应用目录
+        $worker->setAppPath($this->config['app_path']);
+
+        // 开启守护进程模式
+        if ($this->input->hasOption('daemon')) {
+            HttpServer::$daemonize = true;
         }
 
+        if (!empty($this->config['ssl'])) {
+            $this->config['transport'] = 'ssl';
+            unset($this->config['ssl']);
+        }
+
+        // 全局静态属性设置
+        foreach ($this->config as $name => $val) {
+            if (in_array($name, ['stdoutFile', 'daemonize', 'pidFile', 'logFile'])) {
+                HttpServer::$name = $val;
+                unset($this->config[$name]);
+            }
+        }
+
+        // 设置服务器参数
         $worker->option($this->config);
 
         if (DIRECTORY_SEPARATOR == '\\') {
