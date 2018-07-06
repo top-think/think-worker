@@ -74,7 +74,7 @@ class Worker extends Command
 
         // 开启守护进程模式
         if ($this->input->hasOption('daemon')) {
-            HttpServer::$daemonize = true;
+            $worker->setStaticOption('daemonize', true);
         }
 
         if (!empty($this->config['ssl'])) {
@@ -85,7 +85,7 @@ class Worker extends Command
         // 全局静态属性设置
         foreach ($this->config as $name => $val) {
             if (in_array($name, ['stdoutFile', 'daemonize', 'pidFile', 'logFile'])) {
-                HttpServer::$name = $val;
+                $worker->setStaticOption($name, $val);
                 unset($this->config[$name]);
             }
         }

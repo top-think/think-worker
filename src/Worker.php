@@ -45,6 +45,11 @@ class Worker extends Server
         $this->appPath = $path;
     }
 
+    public function setStaticOption($name, $value)
+    {
+        WorkerServer::${$name} = $value;
+    }
+
     /**
      * 设置参数
      * @access public
