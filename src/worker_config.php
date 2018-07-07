@@ -9,12 +9,15 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-\think\Console::addDefaultCommands([
-    '\\think\\worker\\command\\Worker',
-    '\\think\\worker\\command\\Server',
-]);
+// +----------------------------------------------------------------------
+// | Workerman设置 php think worker命令行下有效
+// +----------------------------------------------------------------------
+return [
+    // 扩展自身需要的配置
+    'host'  => '0.0.0.0', // 监听地址
+    'port'  => 2345, // 监听端口
 
-\think\Facade::bind([
-    \think\worker\facade\Application::class => \think\worker\Application::class,
-    \think\worker\facade\Worker::class      => \think\worker\Worker::class,
-]);
+    // 支持workerman的所有配置参数
+    'name'  => 'thinkphp',
+    'count' => 4,
+];
