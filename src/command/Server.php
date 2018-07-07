@@ -35,7 +35,7 @@ class Server extends Command
                 'The port to workerman server')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
-            ->setDescription('Workerman HTTP Server for ThinkPHP');
+            ->setDescription('Workerman Server for ThinkPHP');
     }
 
     public function execute(Input $input, Output $output)
@@ -43,6 +43,12 @@ class Server extends Command
         $action = $input->getArgument('action');
 
         $this->config = Config::pull('worker_server');
+
+        if (!empty($this->config['controller'])) {
+            $command = 'php public/index.php ' . $this->config['controller'] . ' ' . $action;
+            passthru($command);
+            return;
+        }
 
         if (DIRECTORY_SEPARATOR !== '\\') {
             if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
