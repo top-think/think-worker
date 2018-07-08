@@ -17,10 +17,11 @@ use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
+use think\worker\Server as WorkerServer;
 use Workerman\Worker;
 
 /**
- * Worker 命令行类
+ * Worker Server 命令行类
  */
 class Server extends Command
 {
@@ -29,10 +30,6 @@ class Server extends Command
     public function configure()
     {
         $this->setName('worker:server')
-            ->addOption('host', 'H', Option::VALUE_NONE,
-                'The host to workerman server')
-            ->addOption('port', 'p', Option::VALUE_NONE,
-                'The port to workerman server')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
             ->setDescription('Workerman Server for ThinkPHP');
@@ -43,12 +40,6 @@ class Server extends Command
         $action = $input->getArgument('action');
 
         $this->config = Config::pull('worker_server');
-
-        if (!empty($this->config['controller'])) {
-            $command = 'php public/index.php ' . $this->config['controller'] . ' ' . $action;
-            passthru($command);
-            return;
-        }
 
         if (DIRECTORY_SEPARATOR !== '\\') {
             if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
@@ -65,23 +56,27 @@ class Server extends Command
             exit(1);
         }
 
+        // 自定义服务器入口类
+        if (!empty($this->config['server_class'])) {
+            $class = $this->config['server_class'];
+            if (class_exists($class)) {
+                $worker = new $class;
+                if (!$worker instanceof WorkerServer) {
+                    $output->writeln("Server Class Must extends \\think\\worker\\Server");
+                }
+            } else {
+                $output->writeln("Server Class Not Exists : {$class}");
+            }
+            return;
+        }
+
         $output->writeln('Starting Workerman server...');
 
         if (!empty($this->config['socket'])) {
             $socket = $this->config['socket'];
         } else {
-            if ($this->input->hasOption('host')) {
-                $host = $this->input->getOption('host');
-            } else {
-                $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
-            }
-
-            if ($this->input->hasOption('port')) {
-                $port = $this->input->getOption('port');
-            } else {
-                $port = !empty($this->config['port']) ? $this->config['port'] : 2345;
-            }
-
+            $host     = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+            $port     = !empty($this->config['port']) ? $this->config['port'] : 2345;
             $protocol = !empty($this->config['protocol']) ? $this->config['protocol'] : 'http';
             $socket   = $protocol . '://' . $host . ':' . $port;
         }
@@ -117,5 +112,4 @@ class Server extends Command
         // Run worker
         Worker::runAll();
     }
-
 }
