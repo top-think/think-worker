@@ -25,7 +25,7 @@
     "extra": {
         "think-config": {
             "worker": "src/config.php",
-            "worker_server":"scr/worker_config.php"
+            "worker_server":"src/worker_config.php"
         }
     }
 }
