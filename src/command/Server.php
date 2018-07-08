@@ -43,8 +43,8 @@ class Server extends Command
 
         if (DIRECTORY_SEPARATOR !== '\\') {
             if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
-                $output->writeln("Invalid argument action:{$action}, Expected start|stop|restart|reload|status .");
-                exit(1);
+                $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload|status .</error>");
+                return false;
             }
 
             global $argv;
@@ -52,8 +52,8 @@ class Server extends Command
             array_shift($argv);
             array_unshift($argv, 'think', $action);
         } elseif ('start' != $action) {
-            $output->writeln("Not Support action:{$action} on Windows.");
-            exit(1);
+            $output->writeln("<error>Not Support action:{$action} on Windows.</error>");
+            return false;
         }
 
         // 自定义服务器入口类
@@ -62,10 +62,10 @@ class Server extends Command
             if (class_exists($class)) {
                 $worker = new $class;
                 if (!$worker instanceof WorkerServer) {
-                    $output->writeln("Server Class Must extends \\think\\worker\\Server");
+                    $output->writeln("<error>Server Class Must extends \\think\\worker\\Server</error>");
                 }
             } else {
-                $output->writeln("Server Class Not Exists : {$class}");
+                $output->writeln("<error>Server Class Not Exists : {$class}</error>");
             }
             return;
         }

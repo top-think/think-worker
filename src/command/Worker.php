@@ -42,8 +42,8 @@ class Worker extends Command
 
         if (DIRECTORY_SEPARATOR !== '\\') {
             if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
-                $output->writeln("Invalid argument action:{$action}, Expected start|stop|restart|reload|status .");
-                exit(1);
+                $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload|status .</error>");
+                return false;
             }
 
             global $argv;
@@ -51,8 +51,8 @@ class Worker extends Command
             array_shift($argv);
             array_unshift($argv, 'think', $action);
         } elseif ('start' != $action) {
-            $output->writeln("Not Support action:{$action} on Windows.");
-            exit(1);
+            $output->writeln("<error>Not Support action:{$action} on Windows.</error>");
+            return false;
         }
 
         $output->writeln('Starting Workerman http server...');
