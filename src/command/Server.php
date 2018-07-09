@@ -92,7 +92,7 @@ class Server extends Command
 
         // 开启守护进程模式
         if ($this->input->hasOption('daemon')) {
-            $worker->setStaticOption('daemonize', true);
+            Worker::$daemonize = true;
         }
 
         if (!empty($this->config['ssl'])) {
