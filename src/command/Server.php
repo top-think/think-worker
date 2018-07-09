@@ -63,10 +63,10 @@ class Server extends Command
             if (class_exists($class)) {
                 $worker = new $class;
                 if (!$worker instanceof WorkerServer) {
-                    $output->writeln("<error>Worker Class Must extends \\think\\worker\\Server</error>");
+                    $output->writeln("<error>Worker Server Class Must extends \\think\\worker\\Server</error>");
                 }
             } else {
-                $output->writeln("<error>Worker Class Not Exists : {$class}</error>");
+                $output->writeln("<error>Worker Server Class Not Exists : {$class}</error>");
             }
             return;
         }
@@ -80,6 +80,7 @@ class Server extends Command
             $port     = !empty($this->config['port']) ? $this->config['port'] : 2345;
             $protocol = !empty($this->config['protocol']) ? $this->config['protocol'] : 'http';
             $socket   = $protocol . '://' . $host . ':' . $port;
+            unset($this->config['host'], $this->config['port'], $this->config['protocol']);
         }
 
         if (isset($this->config['context'])) {
