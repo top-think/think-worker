@@ -78,7 +78,7 @@ class Server extends Command
         } else {
             $host     = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
             $port     = !empty($this->config['port']) ? $this->config['port'] : 2345;
-            $protocol = !empty($this->config['protocol']) ? $this->config['protocol'] : 'http';
+            $protocol = !empty($this->config['protocol']) ? $this->config['protocol'] : 'websocket';
             $socket   = $protocol . '://' . $host . ':' . $port;
             unset($this->config['host'], $this->config['port'], $this->config['protocol']);
         }

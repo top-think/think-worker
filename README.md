@@ -13,7 +13,7 @@ composer require topthink/think-worker
 php think worker
 ~~~
 
-然后就可以通过浏览器直接访问
+然后就可以通过浏览器直接访问当前应用
 
 ~~~
 http://localhost:2346
@@ -35,11 +35,7 @@ workerman的参数可以在应用配置目录下的worker.php里面配置。
 php think worker:server
 ~~~
 
-然后就可以通过浏览器直接访问
-
-~~~
-http://localhost:2345
-~~~
+默认会在0.0.0.0:2345开启一个websocket服务。
 
 如果需要自定义参数，可以在config/worker_server.php中进行配置，包括：
 
