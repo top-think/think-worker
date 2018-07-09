@@ -57,15 +57,16 @@ class Server extends Command
         }
 
         // 自定义服务器入口类
-        if (!empty($this->config['server_class'])) {
-            $class = $this->config['server_class'];
+        if (!empty($this->config['worker_class'])) {
+            $class = $this->config['worker_class'];
+
             if (class_exists($class)) {
                 $worker = new $class;
                 if (!$worker instanceof WorkerServer) {
-                    $output->writeln("<error>Server Class Must extends \\think\\worker\\Server</error>");
+                    $output->writeln("<error>Worker Class Must extends \\think\\worker\\Server</error>");
                 }
             } else {
-                $output->writeln("<error>Server Class Not Exists : {$class}</error>");
+                $output->writeln("<error>Worker Class Not Exists : {$class}</error>");
             }
             return;
         }

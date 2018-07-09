@@ -64,7 +64,7 @@ return [
 ];
 ~~~
 
-也支持使用自定义类作为服务入口文件类。例如，我们可以创建一个服务类（必须要继承 think\worker\Server），然后设置属性和添加回调方法
+也支持使用自定义类作为Worker服务入口文件类。例如，我们可以创建一个服务类（必须要继承 think\worker\Server），然后设置属性和添加回调方法
 
 ~~~
 <?php
@@ -87,7 +87,7 @@ class Worker extends Server
 然后在worker_server.php中增加配置参数：
 ~~~
 return [
-	'server_class'	=>	'app\http\Worker',
+	'worker_class'	=>	'app\http\Worker',
 ];
 ~~~
 
