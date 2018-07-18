@@ -16,5 +16,5 @@
 
 \think\Facade::bind([
     \think\worker\facade\Application::class => \think\worker\Application::class,
-    \think\worker\facade\Worker::class      => \think\worker\Worker::class,
+    \think\worker\facade\Http::class        => \think\worker\Http::class,
 ]);

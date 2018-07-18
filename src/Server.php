@@ -25,7 +25,7 @@ abstract class Server
     protected $port     = '2346';
     protected $option   = [];
     protected $context  = [];
-    protected $event    = ['onWorkerStart', 'onConnect', 'onMessage', 'onClose', 'onError', 'onBufferFull', 'onBufferDrain', 'onWorkerReload'];
+    protected $event    = ['onWorkerStart', 'onConnect', 'onMessage', 'onClose', 'onError', 'onBufferFull', 'onBufferDrain', 'onWorkerReload', 'onWebSocketConnect'];
 
     /**
      * 架构函数

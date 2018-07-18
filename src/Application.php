@@ -12,6 +12,7 @@
 namespace think\worker;
 
 use think\App;
+use think\Error;
 use think\exception\HttpException;
 use Workerman\Protocols\Http;
 
@@ -41,12 +42,21 @@ class Application extends App
 
             $this->request->setPathinfo($pathinfo);
 
+            if ($this->config->get('session.auto_start')) {
+                Http::sessionStart();
+            }
+
             // 更新请求对象实例
             $this->route->setRequest($this->request);
 
             $response = $this->run();
             $response->send();
             $content = ob_get_clean();
+
+            // Trace调试注入
+            if ($this->env->get('app_trace', $this->config->get('app_trace'))) {
+                $this->debug->inject($response, $content);
+            }
 
             $this->httpResponseCode($response->getCode());
 
@@ -57,11 +67,11 @@ class Application extends App
 
             $connection->send($content);
         } catch (HttpException $e) {
-            $this->exception($connection, $e, 404);
+            $this->exception($connection, $e);
         } catch (\Exception $e) {
-            $this->exception($connection, $e, 500);
+            $this->exception($connection, $e);
         } catch (\Throwable $e) {
-            $this->exception($connection, $e, 500);
+            $this->exception($connection, $e);
         }
     }
 
@@ -70,10 +80,22 @@ class Application extends App
         Http::header('HTTP/1.1', true, $code);
     }
 
-    protected function exception($connection, $e, $code)
+    protected function exception($connection, $e)
     {
-        $this->httpResponseCode($code);
-        $connection->send($e->getMessage());
+        if ($e instanceof \Exception) {
+            $handler = Error::getExceptionHandler();
+            $handler->report($e);
+
+            $resp    = $handler->render($e);
+            $content = $resp->getContent();
+            $code    = $resp->getCode();
+
+            $this->httpResponseCode($code);
+            $connection->send($content);
+        } else {
+            $this->httpResponseCode(500);
+            $connection->send($e->getMessage());
+        }
     }
 
 }

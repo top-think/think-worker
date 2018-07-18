@@ -17,7 +17,8 @@ use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use think\worker\Worker as HttpServer;
+use think\facade\Env;
+use think\worker\Http as HttpServer;
 
 /**
  * Worker 命令行类
@@ -71,16 +72,26 @@ class Worker extends Command
 
         // 设置应用目录
         $worker->setAppPath($this->config['app_path']);
+        unset($this->config['app_path']);
 
         // 开启守护进程模式
         if ($this->input->hasOption('daemon')) {
             $worker->setStaticOption('daemonize', true);
         }
 
+        // 开启HTTPS访问
         if (!empty($this->config['ssl'])) {
             $this->config['transport'] = 'ssl';
             unset($this->config['ssl']);
         }
+
+        // 设置网站目录
+        if (empty($this->config['root'])) {
+            $this->config['root'] = Env::get('root_path') . 'public';
+        }
+
+        $worker->setRoot($this->config['root']);
+        unset($this->config['root']);
 
         // 全局静态属性设置
         foreach ($this->config as $name => $val) {
