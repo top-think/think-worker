@@ -93,6 +93,14 @@ class Worker extends Command
         $worker->setRoot($this->config['root']);
         unset($this->config['root']);
 
+        // 设置文件监控
+        if (Env::get('app_debug') || !empty($this->config['monitor_files_change'])) {
+            $interval = isset($this->config['monitor_interval']) ? $this->config['monitor_interval'] : 2;
+            $paths    = isset($this->config['monitor_paths']) ? $this->config['monitor_paths'] : [];
+            $worker->setMonitor($interval, $paths);
+            unset($this->config['monitor_files_change'], $this->config['monitor_interval'], $this->config['monitor_paths']);
+        }
+
         // 全局静态属性设置
         foreach ($this->config as $name => $val) {
             if (in_array($name, ['stdoutFile', 'daemonize', 'pidFile', 'logFile'])) {

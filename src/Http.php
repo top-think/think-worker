@@ -10,6 +10,8 @@
 // +----------------------------------------------------------------------
 namespace think\worker;
 
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use think\Facade;
 use Workerman\Protocols\Http as WorkerHttp;
 use Workerman\Worker;
@@ -22,6 +24,8 @@ class Http extends Server
     protected $app;
     protected $appPath;
     protected $root;
+    protected $monitor;
+    protected $lastMtime;
     protected $mimeType = [
         'xml'   => 'application/xml,text/xml,application/x-xml',
         'json'  => 'application/json,text/x-json,application/jsonrequest,text/json',
@@ -71,6 +75,12 @@ class Http extends Server
         Worker::${$name} = $value;
     }
 
+    public function setMonitor($interval = 2, $path = [])
+    {
+        $this->monitor['interval'] = $interval;
+        $this->monitor['path']     = (array) $path;
+    }
+
     /**
      * 设置参数
      * @access public
@@ -95,7 +105,8 @@ class Http extends Server
      */
     public function onWorkerStart($worker)
     {
-        $this->app = new Application($this->appPath);
+        $this->app       = new Application($this->appPath);
+        $this->lastMtime = time();
 
         Facade::bind([
             'think\facade\Cookie'  => Cookie::class,
@@ -109,6 +120,31 @@ class Http extends Server
             'cookie'  => Cookie::class,
             'session' => Session::class,
         ]);
+
+        if (0 == $worker->id && $this->monitor) {
+            $paths = $this->monitor['path'] ?: [$this->app->getAppPath(), $this->app->getConfigPath()];
+            $timer = $this->monitor['interval'] ?: 2;
+
+            $server->tick($timer, function () use ($paths) {
+                foreach ($paths as $path) {
+                    $dir      = new RecursiveDirectoryIterator($path);
+                    $iterator = new RecursiveIteratorIterator($dir);
+
+                    foreach ($iterator as $file) {
+                        if (pathinfo($file, PATHINFO_EXTENSION) != 'php') {
+                            continue;
+                        }
+
+                        if ($this->lastMtime < $file->getMTime()) {
+                            echo '[update]' . $file . "\n";
+                            posix_kill(posix_getppid(), SIGUSR1);
+                            $this->lastMtime = $file->getMTime();
+                            return;
+                        }
+                    }
+                }
+            });
+        }
     }
 
     /**
@@ -150,6 +186,7 @@ class Http extends Server
         $mimeType = $this->getMimeType($file);
 
         WorkerHttp::header('HTTP/1.1 200 OK');
+        WorkerHttp::header('Connection: keep-alive');
 
         if ($mimeType) {
             WorkerHttp::header('Content-Type: ' . $mimeType);
@@ -160,18 +197,16 @@ class Http extends Server
             WorkerHttp::header('Content-Disposition: attachment; filename="' . $fileinfo . '"');
         }
 
-        $filesize = filesize($file);
-        WorkerHttp::header('Connection: keep-alive');
-
         if ($modifiyTime) {
             WorkerHttp::header('Last-Modified: ' . $modifiyTime);
         }
 
-        WorkerHttp::header('Content-Length: ' . $filesize);
+        WorkerHttp::header('Content-Length: ' . filesize($file));
 
         ob_start();
         readfile($file);
         $content = ob_get_clean();
+
         return $connection->send($content);
     }
 
