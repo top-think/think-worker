@@ -94,11 +94,11 @@ class Worker extends Command
         unset($this->config['root']);
 
         // 设置文件监控
-        if (Env::get('app_debug') || !empty($this->config['monitor_files_change'])) {
+        if (Env::get('app_debug') || !empty($this->config['monitor'])) {
             $interval = isset($this->config['monitor_interval']) ? $this->config['monitor_interval'] : 2;
-            $paths    = isset($this->config['monitor_paths']) ? $this->config['monitor_paths'] : [];
+            $paths    = isset($this->config['monitor_path']) ? $this->config['monitor_path'] : [];
             $worker->setMonitor($interval, $paths);
-            unset($this->config['monitor_files_change'], $this->config['monitor_interval'], $this->config['monitor_paths']);
+            unset($this->config['monitor'], $this->config['monitor_interval'], $this->config['monitor_path']);
         }
 
         // 全局静态属性设置

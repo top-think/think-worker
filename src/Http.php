@@ -13,6 +13,7 @@ namespace think\worker;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use think\Facade;
+use Workerman\Lib\Timer;
 use Workerman\Protocols\Http as WorkerHttp;
 use Workerman\Worker;
 
@@ -26,20 +27,6 @@ class Http extends Server
     protected $root;
     protected $monitor;
     protected $lastMtime;
-    protected $mimeType = [
-        'xml'   => 'application/xml,text/xml,application/x-xml',
-        'json'  => 'application/json,text/x-json,application/jsonrequest,text/json',
-        'js'    => 'text/javascript,application/javascript,application/x-javascript',
-        'css'   => 'text/css',
-        'rss'   => 'application/rss+xml',
-        'yaml'  => 'application/x-yaml,text/yaml',
-        'atom'  => 'application/atom+xml',
-        'pdf'   => 'application/pdf',
-        'text'  => 'text/plain',
-        'image' => 'image/png,image/jpg,image/jpeg,image/pjpeg,image/gif,image/webp,image/*',
-        'csv'   => 'text/csv',
-        'html'  => 'text/html,application/xhtml+xml,*/*',
-    ];
 
     /**
      * 架构函数
@@ -125,7 +112,7 @@ class Http extends Server
             $paths = $this->monitor['path'] ?: [$this->app->getAppPath(), $this->app->getConfigPath()];
             $timer = $this->monitor['interval'] ?: 2;
 
-            $server->tick($timer, function () use ($paths) {
+            Timer::add($timer, function () use ($paths) {
                 foreach ($paths as $path) {
                     $dir      = new RecursiveDirectoryIterator($path);
                     $iterator = new RecursiveIteratorIterator($dir);
