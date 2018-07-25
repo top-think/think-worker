@@ -11,9 +11,9 @@
 namespace think;
 
 Console::addDefaultCommands([
-    '\\think\\worker\\command\\Worker',
-    '\\think\\worker\\command\\Server',
     '\\think\\worker\\command\\GatewayWorker',
+    '\\think\\worker\\command\\Server',
+    '\\think\\worker\\command\\Worker',
 ]);
 
 Facade::bind([
