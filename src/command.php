@@ -8,13 +8,20 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
+namespace think;
 
-\think\Console::addDefaultCommands([
+Console::addDefaultCommands([
     '\\think\\worker\\command\\Worker',
     '\\think\\worker\\command\\Server',
+    '\\think\\worker\\command\\GatewayWorker',
 ]);
 
-\think\Facade::bind([
-    \think\worker\facade\Application::class => \think\worker\Application::class,
-    \think\worker\facade\Http::class        => \think\worker\Http::class,
+Facade::bind([
+    worker\facade\Application::class => worker\Application::class,
+    worker\facade\Http::class        => worker\Http::class,
+]);
+
+// 指定日志类驱动
+Loader::addClassMap([
+    'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
 ]);
