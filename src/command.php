@@ -8,15 +8,9 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-namespace think;
 
-Console::addDefaultCommands([
+\think\Console::addDefaultCommands([
     '\\think\\worker\\command\\GatewayWorker',
     '\\think\\worker\\command\\Server',
     '\\think\\worker\\command\\Worker',
-]);
-
-Facade::bind([
-    worker\facade\Application::class => worker\Application::class,
-    worker\facade\Http::class        => worker\Http::class,
 ]);
