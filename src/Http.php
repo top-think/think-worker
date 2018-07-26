@@ -96,14 +96,16 @@ class Http extends Server
         $this->app       = new Application($this->appPath);
         $this->lastMtime = time();
 
-        Facade::bind([
-            'think\facade\Cookie'  => Cookie::class,
-            'think\facade\Session' => Session::class,
-        ]);
-
         // 指定日志类驱动
         Loader::addClassMap([
             'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
+        ]);
+
+        Facade::bind([
+            'think\facade\Cookie'     => Cookie::class,
+            'think\facade\Session'    => Session::class,
+            facade\Application::class => Application::class,
+            facade\Http::class        => Http::class,
         ]);
 
         // 应用初始化
