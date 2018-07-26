@@ -13,6 +13,7 @@ namespace think\worker;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use think\Facade;
+use think\Loader;
 use Workerman\Lib\Timer;
 use Workerman\Protocols\Http as WorkerHttp;
 use Workerman\Worker;
@@ -98,6 +99,11 @@ class Http extends Server
         Facade::bind([
             'think\facade\Cookie'  => Cookie::class,
             'think\facade\Session' => Session::class,
+        ]);
+
+        // 指定日志类驱动
+        Loader::addClassMap([
+            'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
         ]);
 
         // 应用初始化

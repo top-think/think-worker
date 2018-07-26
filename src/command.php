@@ -20,8 +20,3 @@ Facade::bind([
     worker\facade\Application::class => worker\Application::class,
     worker\facade\Http::class        => worker\Http::class,
 ]);
-
-// 指定日志类驱动
-Loader::addClassMap([
-    'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
-]);
