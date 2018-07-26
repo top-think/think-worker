@@ -14,7 +14,7 @@ namespace think\worker;
 use think\App;
 use think\Error;
 use think\exception\HttpException;
-use Workerman\Protocols\Http;
+use Workerman\Protocols\Http as WorkerHttp;
 
 /**
  * Worker应用对象
@@ -43,7 +43,7 @@ class Application extends App
             $this->request->setPathinfo($pathinfo);
 
             if ($this->config->get('session.auto_start')) {
-                Http::sessionStart();
+                WorkerHttp::sessionStart();
             }
 
             // 更新请求对象实例
@@ -62,7 +62,7 @@ class Application extends App
 
             foreach ($response->getHeader() as $name => $val) {
                 // 发送头部信息
-                Http::header($name . (!is_null($val) ? ':' . $val : ''));
+                WorkerHttp::header($name . (!is_null($val) ? ':' . $val : ''));
             }
 
             $connection->send($content);
@@ -77,7 +77,7 @@ class Application extends App
 
     protected function httpResponseCode($code = 200)
     {
-        Http::header('HTTP/1.1', true, $code);
+        WorkerHttp::header('HTTP/1.1', true, $code);
     }
 
     protected function exception($connection, $e)
