@@ -130,12 +130,12 @@ class File
     protected function getMasterLogFile()
     {
         if ($this->config['single']) {
-            $name = is_string($this->config['single']) ? $this->config['single'] : 'swoole';
+            $name = is_string($this->config['single']) ? $this->config['single'] : 'worker';
 
             $destination = $this->config['path'] . $name . '.log';
         } else {
             if ($this->config['max_files']) {
-                $filename = date('Ymd') . '_swoole.log';
+                $filename = date('Ymd') . '_worker.log';
                 $files    = glob($this->config['path'] . '*.log');
 
                 try {
@@ -145,7 +145,7 @@ class File
                 } catch (\Exception $e) {
                 }
             } else {
-                $filename = date('Ym') . DIRECTORY_SEPARATOR . date('d') . '_swoole.log';
+                $filename = date('Ym') . DIRECTORY_SEPARATOR . date('d') . '_worker.log';
             }
 
             $destination = $this->config['path'] . $filename;
@@ -164,13 +164,13 @@ class File
     protected function getApartLevelFile($path, $type)
     {
         if ($this->config['single']) {
-            $name = is_string($this->config['single']) ? $this->config['single'] : 'swoole';
+            $name = is_string($this->config['single']) ? $this->config['single'] : 'worker';
 
             $name .= '_' . $type;
         } elseif ($this->config['max_files']) {
-            $name = date('Ymd') . '_' . $type . '_swoole';
+            $name = date('Ymd') . '_' . $type . '_worker';
         } else {
-            $name = date('d') . '_' . $type . '_swoole';
+            $name = date('d') . '_' . $type . '_worker';
         }
 
         return $path . DIRECTORY_SEPARATOR . $name . '.log';
