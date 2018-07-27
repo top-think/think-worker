@@ -10,11 +10,7 @@
 // +----------------------------------------------------------------------
 
 \think\Console::addDefaultCommands([
-    '\\think\\worker\\command\\Worker',
+    '\\think\\worker\\command\\GatewayWorker',
     '\\think\\worker\\command\\Server',
-]);
-
-\think\Facade::bind([
-    \think\worker\facade\Application::class => \think\worker\Application::class,
-    \think\worker\facade\Http::class        => \think\worker\Http::class,
+    '\\think\\worker\\command\\Worker',
 ]);
