@@ -181,7 +181,7 @@ class Http extends Server
             WorkerHttp::header('Content-Type: application/octet-stream');
             $fileinfo = pathinfo($file);
             $filename = isset($fileinfo['filename']) ? $fileinfo['filename'] : '';
-            WorkerHttp::header('Content-Disposition: attachment; filename="' . $fileinfo . '"');
+            WorkerHttp::header('Content-Disposition: attachment; filename="' . $filename . '"');
         }
 
         if ($modifiyTime) {
