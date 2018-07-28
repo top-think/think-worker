@@ -31,6 +31,8 @@ class Worker extends Command
     {
         $this->setName('worker')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
+            ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of workerman server.', null)
+            ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of workerman server.', null)
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
             ->setDescription('Workerman HTTP Server for ThinkPHP');
     }
@@ -40,6 +42,13 @@ class Worker extends Command
         $action = $input->getArgument('action');
 
         $this->config = Config::pull('worker');
+
+        if (empty($this->config['pidFile'])) {
+            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
+        }
+
+        // 避免pid混乱
+        $this->config['pidFile'] .= '_' . $this->getPort();
 
         if (DIRECTORY_SEPARATOR !== '\\') {
             if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
@@ -58,8 +67,8 @@ class Worker extends Command
 
         $output->writeln('Starting Workerman http server...');
 
-        $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
-        $port = !empty($this->config['port']) ? $this->config['port'] : 2346;
+        $host = $this->getHost();
+        $port = $this->getPort();
 
         if (isset($this->config['context_option'])) {
             $context = $this->config['context_option'];
@@ -120,4 +129,25 @@ class Worker extends Command
         $worker->start();
     }
 
+    protected function getHost()
+    {
+        if ($this->input->hasOption('host')) {
+            $host = $this->input->getOption('host');
+        } else {
+            $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+        }
+
+        return $host;
+    }
+
+    protected function getPort()
+    {
+        if ($this->input->hasOption('port')) {
+            $port = $this->input->getOption('port');
+        } else {
+            $port = !empty($this->config['port']) ? $this->config['port'] : 2346;
+        }
+
+        return $port;
+    }
 }

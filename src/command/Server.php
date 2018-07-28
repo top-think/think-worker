@@ -31,6 +31,8 @@ class Server extends Command
     {
         $this->setName('worker:server')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
+            ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of workerman server.', null)
+            ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of workerman server.', null)
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
             ->setDescription('Workerman Server for ThinkPHP');
     }
@@ -40,6 +42,13 @@ class Server extends Command
         $action = $input->getArgument('action');
 
         $this->config = Config::pull('worker_server');
+
+        if (empty($this->config['pidFile'])) {
+            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
+        }
+
+        // 避免pid混乱
+        $this->config['pidFile'] .= '_' . $this->getPort();
 
         if (DIRECTORY_SEPARATOR !== '\\') {
             if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
@@ -76,8 +85,8 @@ class Server extends Command
         if (!empty($this->config['socket'])) {
             $socket = $this->config['socket'];
         } else {
-            $host     = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
-            $port     = !empty($this->config['port']) ? $this->config['port'] : 2345;
+            $host     = $this->getHost();
+            $port     = $this->getPort();
             $protocol = !empty($this->config['protocol']) ? $this->config['protocol'] : 'websocket';
             $socket   = $protocol . '://' . $host . ':' . $port;
             unset($this->config['host'], $this->config['port'], $this->config['protocol']);
@@ -113,5 +122,27 @@ class Server extends Command
 
         // Run worker
         Worker::runAll();
+    }
+
+    protected function getHost()
+    {
+        if ($this->input->hasOption('host')) {
+            $host = $this->input->getOption('host');
+        } else {
+            $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+        }
+
+        return $host;
+    }
+
+    protected function getPort()
+    {
+        if ($this->input->hasOption('port')) {
+            $port = $this->input->getOption('port');
+        } else {
+            $port = !empty($this->config['port']) ? $this->config['port'] : 2345;
+        }
+
+        return $port;
     }
 }
