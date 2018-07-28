@@ -29,6 +29,9 @@ class GatewayWorker extends Command
     {
         $this->setName('gatewayworker')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
+            ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of workerman server.', null)
+            ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of workerman server.', null)
+            ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
             ->setDescription('GatewayWorker Server for ThinkPHP');
     }
 
@@ -46,52 +49,102 @@ class GatewayWorker extends Command
             array_shift($argv);
             array_shift($argv);
             array_unshift($argv, 'think', $action);
-        } elseif ('start' != $action) {
-            $output->writeln("Not Support action:{$action} on Windows.");
+        } else {
+            $output->writeln("GatewayWorker Not Support On Windows.");
             exit(1);
         }
 
         $output->writeln('Starting GatewayWorker server...');
         $option = Config::pull('gatewayworker');
 
-        $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
-        $port = !empty($option['port']) ? $option['port'] : '1236';
+        if ($input->hasOption('host')) {
+            $host = $input->getOption('host');
+        } else {
+            $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
+        }
+
+        if ($input->hasOption('port')) {
+            $port = $input->getOption('port');
+        } else {
+            $port = !empty($option['port']) ? $option['port'] : '2347';
+        }
 
         $this->start($host, $port, $option);
     }
 
-    public function register($host, $port)
+    /**
+     * 启动
+     * @access public
+     * @param  string   $host 监听地址
+     * @param  integer  $port 监听端口
+     * @param  array    $option 参数
+     * @return void
+     */
+    public function start($host, $port, $option = [])
     {
-        // 初始化register
-        new Register('text://' . $host . ':' . $port);
+        $registerAddress = isset($option['registerAddress']) ? $option['registerAddress'] : '127.0.0.1:1236';
+
+        $this->register($registerAddress);
+        $this->businessWorker($registerAddress, isset($option['businessWorker']) ? $option['businessWorker'] : []);
+        $this->gateway($registerAddress, $host, $port, $option);
+
+        Worker::runAll();
     }
 
-    public function businessWorker($host, $port, $option = [])
+    /**
+     * 启动register
+     * @access public
+     * @param  string   $registerAddress
+     * @return void
+     */
+    public function register($registerAddress)
+    {
+        // 初始化register
+        new Register('text://' . $registerAddress);
+    }
+
+    /**
+     * 启动businessWorker
+     * @access public
+     * @param  string   $registerAddress registerAddress
+     * @param  array    $option 参数
+     * @return void
+     */
+    public function businessWorker($registerAddress, $option = [])
     {
         // 初始化 bussinessWorker 进程
         $worker = new BusinessWorker();
 
         $worker->name            = 'BusinessWorker';
-        $worker->registerAddress = $host . ':' . $port;
+        $worker->registerAddress = $registerAddress;
         $worker->eventHandler    = !empty($option['event_handler']) ? $option['event_handler'] : '\think\worker\Events';
 
         $this->option($worker, $option);
     }
 
-    public function gateway($host, $port, $option = [])
+    /**
+     * 启动gateway
+     * @access public
+     * @param  string   $registerAddress registerAddress
+     * @param  string   $host 服务地址
+     * @param  integer  $port 监听端口
+     * @param  array    $option 参数
+     * @return void
+     */
+    public function gateway($registerAddress, $host, $port, $option = [])
     {
         // 初始化 gateway 进程
         $protocol = !empty($option['protocol']) ? $option['protocol'] : 'websocket';
-        $host     = !empty($option['host']) ? $option['host'] : '0.0.0.0';
-        $port     = !empty($option['port']) ? $option['port'] : '2347';
 
         $gateway = new Gateway($protocol . '://' . $host . ':' . $port, isset($option['context']) ? $option['context'] : []);
 
         $gateway->name                 = 'Gateway';
+        $gateway->lanIp                = '127.0.0.1';
+        $gateway->startPort            = 2000;
         $gateway->pingInterval         = 30;
         $gateway->pingNotResponseLimit = 0;
         $gateway->pingData             = '{"type":"ping"}';
-        $gateway->registerAddress      = $host . ':' . $port;
+        $gateway->registerAddress      = $registerAddress;
 
         $this->option($gateway, $option);
     }
@@ -103,7 +156,7 @@ class GatewayWorker extends Command
      * @param  array    $option 参数
      * @return void
      */
-    protected function option($worker, array $option)
+    protected function option($worker, array $option = [])
     {
         // 设置参数
         if (!empty($option)) {
@@ -113,17 +166,4 @@ class GatewayWorker extends Command
         }
     }
 
-    /**
-     * 启动
-     * @access public
-     * @return void
-     */
-    public function start($host, $port, $option = [])
-    {
-        $this->register($host, $port);
-        $this->businessWorker($host, $port, isset($option['businessWorker']) ? $option['businessWorker'] : []);
-        $this->gateway($host, $port, isset($option['gateway']) ? $option['gateway'] : []);
-
-        Worker::runAll();
-    }
 }
