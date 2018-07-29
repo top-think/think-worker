@@ -30,7 +30,7 @@ class Worker extends Command
     public function configure()
     {
         $this->setName('worker')
-            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
+            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status|connections", 'start')
             ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of workerman server.', null)
             ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of workerman server.', null)
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
@@ -41,18 +41,9 @@ class Worker extends Command
     {
         $action = $input->getArgument('action');
 
-        $this->config = Config::pull('worker');
-
-        if (empty($this->config['pidFile'])) {
-            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
-        }
-
-        // 避免pid混乱
-        $this->config['pidFile'] .= '_' . $this->getPort();
-
         if (DIRECTORY_SEPARATOR !== '\\') {
-            if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
-                $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload|status .</error>");
+            if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status', 'connections'])) {
+                $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload|status|connections .</error>");
                 return false;
             }
 
@@ -65,10 +56,11 @@ class Worker extends Command
             return false;
         }
 
-        $output->writeln('Starting Workerman http server...');
+        if ('start' == $action) {
+            $output->writeln('Starting Workerman http server...');
+        }
 
-        $host = $this->getHost();
-        $port = $this->getPort();
+        $this->config = Config::pull('worker');
 
         if (isset($this->config['context_option'])) {
             $context = $this->config['context_option'];
@@ -77,7 +69,17 @@ class Worker extends Command
             $context = [];
         }
 
+        $host = $this->getHost();
+        $port = $this->getPort();
+
         $worker = new HttpServer($host, $port, $context);
+
+        if (empty($this->config['pidFile'])) {
+            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
+        }
+
+        // 避免pid混乱
+        $this->config['pidFile'] .= '_' . $port;
 
         // 设置应用目录
         $worker->setAppPath($this->config['app_path']);
@@ -122,7 +124,6 @@ class Worker extends Command
         $worker->option($this->config);
 
         if (DIRECTORY_SEPARATOR == '\\') {
-            $output->writeln("Workerman http server started: <http://{$host}:{$port}>");
             $output->writeln('You can exit with <info>`CTRL-C`</info>');
         }
 

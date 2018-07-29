@@ -52,13 +52,15 @@ abstract class Server
 
         // 初始化
         $this->init();
-
-        // Run worker
-        Worker::runAll();
     }
 
     protected function init()
     {
+    }
+
+    public function start()
+    {
+        Worker::runAll();
     }
 
     public function __set($name, $value)

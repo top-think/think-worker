@@ -31,7 +31,7 @@ class Server extends Command
     public function configure()
     {
         $this->setName('worker:server')
-            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
+            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status|connections", 'start')
             ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of workerman server.', null)
             ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of workerman server.', null)
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
@@ -42,18 +42,9 @@ class Server extends Command
     {
         $action = $input->getArgument('action');
 
-        $this->config = Config::pull('worker_server');
-
-        if (empty($this->config['pidFile'])) {
-            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
-        }
-
-        // 避免pid混乱
-        $this->config['pidFile'] .= '_' . $this->getPort();
-
         if (DIRECTORY_SEPARATOR !== '\\') {
-            if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
-                $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload|status .</error>");
+            if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status', 'connections'])) {
+                $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload|status|connections .</error>");
                 return false;
             }
 
@@ -66,25 +57,28 @@ class Server extends Command
             return false;
         }
 
+        $this->config = Config::pull('worker_server');
+
+        if ('start' == $action) {
+            $output->writeln('Starting Workerman server...');
+        }
+
         // 自定义服务器入口类
         if (!empty($this->config['worker_class'])) {
-            $class = $this->config['worker_class'];
+            $class = (array) $this->config['worker_class'];
 
-            if (class_exists($class)) {
-                $worker = new $class;
-                if (!$worker instanceof WorkerServer) {
-                    $output->writeln("<error>Worker Server Class Must extends \\think\\worker\\Server</error>");
-                }
-            } else {
-                $output->writeln("<error>Worker Server Class Not Exists : {$class}</error>");
+            foreach ($class as $server) {
+                $this->startServer($server);
             }
+
+            // Run worker
+            Worker::runAll();
             return;
         }
 
-        $output->writeln('Starting Workerman server...');
-
         if (!empty($this->config['socket'])) {
-            $socket = $this->config['socket'];
+            $socket            = $this->config['socket'];
+            list($host, $port) = explode(':', $socket);
         } else {
             $host     = $this->getHost();
             $port     = $this->getPort();
@@ -101,6 +95,13 @@ class Server extends Command
         }
 
         $worker = new Worker($socket, $context);
+
+        if (empty($this->config['pidFile'])) {
+            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
+        }
+
+        // 避免pid混乱
+        $this->config['pidFile'] .= '_' . $port;
 
         // 开启守护进程模式
         if ($this->input->hasOption('daemon')) {
@@ -123,6 +124,18 @@ class Server extends Command
 
         // Run worker
         Worker::runAll();
+    }
+
+    protected function startServer($class)
+    {
+        if (class_exists($class)) {
+            $worker = new $class;
+            if (!$worker instanceof WorkerServer) {
+                $this->output->writeln("<error>Worker Server Class Must extends \\think\\worker\\Server</error>");
+            }
+        } else {
+            $this->output->writeln("<error>Worker Server Class Not Exists : {$class}</error>");
+        }
     }
 
     protected function getHost()

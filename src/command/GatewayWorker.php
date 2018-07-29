@@ -30,7 +30,7 @@ class GatewayWorker extends Command
     public function configure()
     {
         $this->setName('worker:gateway')
-            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
+            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status|connections", 'start')
             ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of workerman server.', null)
             ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of workerman server.', null)
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the workerman server in daemon mode.')
@@ -42,8 +42,8 @@ class GatewayWorker extends Command
         $action = $input->getArgument('action');
 
         if (DIRECTORY_SEPARATOR !== '\\') {
-            if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status'])) {
-                $output->writeln("Invalid argument action:{$action}, Expected start|stop|restart|reload|status .");
+            if (!in_array($action, ['start', 'stop', 'reload', 'restart', 'status', 'connections'])) {
+                $output->writeln("Invalid argument action:{$action}, Expected start|stop|restart|reload|status|connections .");
                 exit(1);
             }
 
@@ -56,7 +56,10 @@ class GatewayWorker extends Command
             exit(1);
         }
 
-        $output->writeln('Starting GatewayWorker server...');
+        if ('start' == $action) {
+            $output->writeln('Starting GatewayWorker server...');
+        }
+
         $option = Config::pull('gatewayworker');
 
         if ($input->hasOption('host')) {
