@@ -29,7 +29,7 @@ class GatewayWorker extends Command
 {
     public function configure()
     {
-        $this->setName('gatewayworker')
+        $this->setName('worker:gateway')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload|status", 'start')
             ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of workerman server.', null)
             ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of workerman server.', null)
@@ -84,11 +84,23 @@ class GatewayWorker extends Command
      */
     public function start($host, $port, $option = [])
     {
-        $registerAddress = isset($option['registerAddress']) ? $option['registerAddress'] : '127.0.0.1:1236';
+        $registerAddress = !empty($option['registerAddress']) ? $option['registerAddress'] : '127.0.0.1:1236';
 
-        $this->register($registerAddress);
-        $this->businessWorker($registerAddress, isset($option['businessWorker']) ? $option['businessWorker'] : []);
-        $this->gateway($registerAddress, $host, $port, $option);
+        if (!empty($option['register_deploy'])) {
+            // 分布式部署的时候其它服务器可以关闭register服务
+            // 注意需要设置不同的lanIp
+            $this->register($registerAddress);
+        }
+
+        // 启动businessWorker
+        if (!empty($option['businessWorker_deploy'])) {
+            $this->businessWorker($registerAddress, isset($option['businessWorker']) ? $option['businessWorker'] : []);
+        }
+
+        // 启动gateway
+        if (!empty($option['gateway_deploy'])) {
+            $this->gateway($registerAddress, $host, $port, $option);
+        }
 
         Worker::runAll();
     }
@@ -117,11 +129,14 @@ class GatewayWorker extends Command
         // 初始化 bussinessWorker 进程
         $worker = new BusinessWorker();
 
-        $worker->name            = 'BusinessWorker';
-        $worker->registerAddress = $registerAddress;
-        $worker->eventHandler    = !empty($option['event_handler']) ? $option['event_handler'] : '\think\worker\Events';
+        // 以下参数都可以在配置文件中的businessWorker参数中设置
+        $worker->name         = 'BusinessWorker';
+        $worker->count        = 1;
+        $worker->eventHandler = !empty($option['event_handler']) ? $option['event_handler'] : '\think\worker\Events';
 
         $this->option($worker, $option);
+
+        $worker->registerAddress = $registerAddress;
     }
 
     /**
@@ -136,17 +151,34 @@ class GatewayWorker extends Command
     public function gateway($registerAddress, $host, $port, $option = [])
     {
         // 初始化 gateway 进程
-        $protocol = !empty($option['protocol']) ? $option['protocol'] : 'websocket';
+        if (!empty($option['socket'])) {
+            $socket = $option['socket'];
+            unset($option['socket']);
+        } else {
+            $protocol = !empty($option['protocol']) ? $option['protocol'] : 'websocket';
+            $socket   = $protocol . '://' . $host . ':' . $port;
+            unset($option['host'], $option['port'], $option['protocol']);
+        }
 
-        $gateway = new Gateway($protocol . '://' . $host . ':' . $port, isset($option['context']) ? $option['context'] : []);
+        $gateway = new Gateway($socket, isset($option['context']) ? $option['context'] : []);
 
+        // 以下设置参数都可以在配置文件中重新定义覆盖
         $gateway->name                 = 'Gateway';
+        $gateway->count                = 4;
         $gateway->lanIp                = '127.0.0.1';
         $gateway->startPort            = 2000;
         $gateway->pingInterval         = 30;
         $gateway->pingNotResponseLimit = 0;
         $gateway->pingData             = '{"type":"ping"}';
         $gateway->registerAddress      = $registerAddress;
+
+        // 全局静态属性设置
+        foreach ($option as $name => $val) {
+            if (in_array($name, ['stdoutFile', 'daemonize', 'pidFile', 'logFile'])) {
+                Worker::${$name} = $val;
+                unset($option[$name]);
+            }
+        }
 
         $this->option($gateway, $option);
     }
