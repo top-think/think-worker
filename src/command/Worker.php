@@ -130,23 +130,23 @@ class Worker extends Command
         $worker->start();
     }
 
-    protected function getHost()
+    protected function getHost($default = '0.0.0.0')
     {
         if ($this->input->hasOption('host')) {
             $host = $this->input->getOption('host');
         } else {
-            $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+            $host = !empty($this->config['host']) ? $this->config['host'] : $default;
         }
 
         return $host;
     }
 
-    protected function getPort()
+    protected function getPort($default = '2346')
     {
         if ($this->input->hasOption('port')) {
             $port = $this->input->getOption('port');
         } else {
-            $port = !empty($this->config['port']) ? $this->config['port'] : 2346;
+            $port = !empty($this->config['port']) ? $this->config['port'] : $default;
         }
 
         return $port;
