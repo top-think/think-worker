@@ -62,9 +62,9 @@ class Worker extends Command
 
         $this->config = Config::pull('worker');
 
-        if (isset($this->config['context_option'])) {
-            $context = $this->config['context_option'];
-            unset($this->config['context_option']);
+        if (isset($this->config['context'])) {
+            $context = $this->config['context'];
+            unset($this->config['context']);
         } else {
             $context = [];
         }

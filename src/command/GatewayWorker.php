@@ -60,7 +60,7 @@ class GatewayWorker extends Command
             $output->writeln('Starting GatewayWorker server...');
         }
 
-        $option = Config::pull('gatewayworker');
+        $option = Config::pull('gateway_worker');
 
         if ($input->hasOption('host')) {
             $host = $input->getOption('host');
