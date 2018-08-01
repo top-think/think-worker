@@ -105,7 +105,7 @@ class Worker extends Command
         unset($this->config['root']);
 
         // 设置文件监控
-        if (Env::get('app_debug') || !empty($this->config['file_monitor'])) {
+        if (DIRECTORY_SEPARATOR !== '\\' && (Env::get('app_debug') || !empty($this->config['file_monitor']))) {
             $interval = isset($this->config['file_monitor_interval']) ? $this->config['file_monitor_interval'] : 2;
             $paths    = isset($this->config['file_monitor_path']) ? $this->config['file_monitor_path'] : [];
             $worker->setMonitor($interval, $paths);
