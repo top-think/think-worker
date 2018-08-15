@@ -11,7 +11,7 @@
 namespace think\worker;
 
 use think\Cookie as BaseCookie;
-use Workerman\Protocols\Http;
+use Workerman\Protocols\Http as WorkerHttp;
 
 /**
  * Workerman Cookie类
@@ -41,6 +41,6 @@ class Cookie extends BaseCookie
      */
     protected function setCookie($name, $value, $expire, $option = [])
     {
-        Http::setCookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'], $option['httponly']);
+        WorkerHttp::setCookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'], $option['httponly']);
     }
 }
