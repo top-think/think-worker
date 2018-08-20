@@ -96,6 +96,8 @@ class Http extends Server
         $this->app       = new Application($this->appPath);
         $this->lastMtime = time();
 
+        $this->app->workerman = $worker;
+
         // 指定日志类驱动
         Loader::addClassMap([
             'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
