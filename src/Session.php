@@ -11,7 +11,7 @@
 namespace think\worker;
 
 use think\Session as BaseSession;
-use Workerman\Protocols\Http;
+use Workerman\Protocols\Http as WorkerHttp;
 
 /**
  * Workerman Cookie类
@@ -53,15 +53,15 @@ class Session extends BaseSession
         } elseif (isset($config['id']) && !empty($config['id'])) {
             session_id($config['id']);
         } else {
-            session_id(Http::sessionId());
+            session_id(WorkerHttp::sessionId());
         }
 
         if (isset($config['name'])) {
-            Http::sessionName($config['name']);
+            WorkerHttp::sessionName($config['name']);
         }
 
         if (isset($config['path'])) {
-            Http::sessionSavePath($config['path']);
+            WorkerHttp::sessionSavePath($config['path']);
         }
 
         if (isset($config['domain'])) {
@@ -138,7 +138,7 @@ class Session extends BaseSession
      */
     public function start()
     {
-        Http::sessionStart();
+        WorkerHttp::sessionStart();
 
         $this->init = true;
     }
@@ -151,7 +151,7 @@ class Session extends BaseSession
     public function pause()
     {
         // 暂停session
-        Http::sessionWriteClose();
+        WorkerHttp::sessionWriteClose();
         $this->init = false;
     }
 }
