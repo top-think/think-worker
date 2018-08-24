@@ -98,6 +98,7 @@ php think worker:server
 ~~~
 http://localhost:2346
 ~~~
+
 如果在Linux下面，同样支持reload|restart|stop|status 操作
 ~~~
 php think worker:server reload
