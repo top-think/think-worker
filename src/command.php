@@ -10,7 +10,7 @@
 // +----------------------------------------------------------------------
 
 \think\Console::addDefaultCommands([
-    '\\think\\worker\\command\\GatewayWorker',
-    '\\think\\worker\\command\\Server',
-    '\\think\\worker\\command\\Worker',
+    'worker:gateway' => '\\think\\worker\\command\\GatewayWorker',
+    'worker:server'  => '\\think\\worker\\command\\Server',
+    'worker'         => '\\think\\worker\\command\\Worker',
 ]);
