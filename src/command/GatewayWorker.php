@@ -132,11 +132,6 @@ class GatewayWorker extends Command
         // 初始化 bussinessWorker 进程
         $worker = new BusinessWorker();
 
-        // 以下参数都可以在配置文件中的businessWorker参数中设置
-        $worker->name         = 'BusinessWorker';
-        $worker->count        = 1;
-        $worker->eventHandler = !empty($option['event_handler']) ? $option['event_handler'] : '\think\worker\Events';
-
         $this->option($worker, $option);
 
         $worker->registerAddress = $registerAddress;

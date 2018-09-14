@@ -36,7 +36,7 @@ return [
     'pingData'              => '{"type":"ping"}',
 
     // BusinsessWorker配置
-    'BusinessWorker'        => [
+    'businessWorker'        => [
         'name'         => 'BusinessWorker',
         'count'        => 1,
         'eventHandler' => '\think\worker\Events',
