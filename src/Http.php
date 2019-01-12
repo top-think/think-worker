@@ -216,7 +216,45 @@ class Http extends Server
     {
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
-        return finfo_file($finfo, $filename);
+        $mime_type = finfo_file($finfo, $filename);
+
+        if($mime_type === 'text/plain'){
+            $mimeType = $this->getTextMimeType($filename);
+        }
+
+        return $mime_type;
+    }
+
+    /**
+     * getTextMimeType
+     * 通过文件名获取css，js等文本的mimeType
+     * @param mixed $filename 
+     * @return mixed 
+     */
+    public function getTextMimeType($filename){
+        $mime_type_ext = [
+            'html'=>'text/html',
+            'htm'=>'text/html',
+            'shtm'=>'text/html',
+            'css'=>'text/css',
+            'xml'=>'text/xml',
+            'mml'=>'text/mathml',
+            'txt'=>'text/plain',
+            'jad'=>'text/vnd.sun.j2me.app-descriptor',
+            'wml'=>'text/vnd.wap.wml',
+            'htc'=>'text/x-component',
+        ];
+
+        $ext_name = explode('.',$filename);
+
+        $ext_name = array_pop($ext_name);
+
+        if(isset($mime_type_ext[$ext_name])){
+            return $mime_type_ext[$ext_name];
+        }else{
+            return 'text/plain';
+        }
+
     }
 
     /**
