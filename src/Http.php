@@ -219,7 +219,7 @@ class Http extends Server
         $mime_type = finfo_file($finfo, $filename);
 
         if($mime_type === 'text/plain'){
-            $mimeType = $this->getTextMimeType($filename);
+            $mime_type = $this->getTextMimeType($filename);
         }
 
         return $mime_type;
@@ -243,6 +243,7 @@ class Http extends Server
             'jad'=>'text/vnd.sun.j2me.app-descriptor',
             'wml'=>'text/vnd.wap.wml',
             'htc'=>'text/x-component',
+            'js'=>'application/x-javascript'
         ];
 
         $ext_name = explode('.',$filename);
