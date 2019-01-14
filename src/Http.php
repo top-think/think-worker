@@ -229,9 +229,10 @@ class Http extends Server
      * getTextMimeType
      * 通过文件名获取css，js等文本的mimeType
      * @param mixed $filename 
-     * @return mixed 
+     * @return mixed
      */
-    public function getTextMimeType($filename){
+    public function getTextMimeType($filename)
+    {
         $mime_type_ext = [
             'html'=>'text/html',
             'htm'=>'text/html',
@@ -246,7 +247,7 @@ class Http extends Server
             'js'=>'application/x-javascript'
         ];
 
-        $ext_name = explode('.',$filename);
+        $ext_name = explode('.', $filename);
 
         $ext_name = array_pop($ext_name);
 
