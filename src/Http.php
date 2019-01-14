@@ -228,7 +228,7 @@ class Http extends Server
     /**
      * getTextMimeType
      * 通过文件名获取css，js等文本的mimeType
-     * @param mixed $filename 
+     * @param mixed $filename
      * @return mixed
      */
     public function getTextMimeType($filename)
