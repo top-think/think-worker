@@ -40,7 +40,9 @@ class Application extends App
 
             $pathinfo = ltrim(strpos($_SERVER['REQUEST_URI'], '?') ? strstr($_SERVER['REQUEST_URI'], '?', true) : $_SERVER['REQUEST_URI'], '/');
 
-            $this->request->setPathinfo($pathinfo);
+            $this->request
+                ->setPathinfo($pathinfo)
+                ->withInput($GLOBALS['HTTP_RAW_REQUEST_DATA']);
 
             if ($this->config->get('session.auto_start')) {
                 WorkerHttp::sessionStart();
