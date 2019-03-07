@@ -13,7 +13,8 @@
         "workerman/workerman": "^3.5.0",
         "workerman/gateway-worker": "^3.0.0",
         "topthink/think-installer": "^2.0",
-        "topthink/framework": "^5.1.18"
+        "topthink/framework": "^5.1.18",
+        "ext-fileinfo": "*"
     },
     "autoload": {
         "psr-4": {
