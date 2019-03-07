@@ -16,6 +16,7 @@ use think\Facade;
 use think\Loader;
 use Workerman\Lib\Timer;
 use Workerman\Protocols\Http as WorkerHttp;
+use Workerman\Protocols\Http as HttpProtocols;
 use Workerman\Worker;
 
 /**
@@ -28,6 +29,8 @@ class Http extends Server
     protected $root;
     protected $monitor;
     protected $lastMtime;
+    /** @var array Mime mapping. */
+    protected static $mimeTypeMap = [];
 
     /**
      * 架构函数
@@ -88,11 +91,13 @@ class Http extends Server
     /**
      * onWorkerStart 事件回调
      * @access public
-     * @param  \Workerman\Worker    $worker
+     * @param  \Workerman\Worker $worker
      * @return void
+     * @throws \Exception
      */
     public function onWorkerStart($worker)
     {
+        $this->initMimeTypeMap();
         $this->app       = new Application($this->appPath);
         $this->lastMtime = time();
 
@@ -210,13 +215,21 @@ class Http extends Server
     /**
      * 获取文件类型信息
      * @access public
+     * @param $filename
      * @return string
      */
     public function getMimeType($filename)
     {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $file_info = pathinfo($filename);
+        $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
 
-        return finfo_file($finfo, $filename);
+        if (isset(self::$mimeTypeMap[$extension])) {
+            $mime = self::$mimeTypeMap[$extension];
+        } else {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $filename);
+        }
+        return $mime;
     }
 
     /**
@@ -237,5 +250,35 @@ class Http extends Server
     public function stop()
     {
         Worker::stopAll();
+    }
+
+    /**
+     * Init mime map.
+     *
+     * @return void
+     * @throws \Exception
+     */
+    public function initMimeTypeMap()
+    {
+        $mime_file = HttpProtocols::getMimeTypesFile();
+        if (!is_file($mime_file)) {
+            Worker::log("$mime_file mime.type file not fond");
+            return;
+        }
+        $items = file($mime_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!is_array($items)) {
+            Worker::log("get $mime_file mime.type content fail");
+            return;
+        }
+        foreach ($items as $content) {
+            if (preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match)) {
+                $mime_type                      = $match[1];
+                $workerman_file_extension_var   = $match[2];
+                $workerman_file_extension_array = explode(' ', substr($workerman_file_extension_var, 0, -1));
+                foreach ($workerman_file_extension_array as $workerman_file_extension) {
+                    self::$mimeTypeMap[$workerman_file_extension] = $mime_type;
+                }
+            }
+        }
     }
 }
