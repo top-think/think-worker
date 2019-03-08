@@ -13,7 +13,6 @@ namespace think\worker;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use think\Facade;
-use think\Loader;
 use Workerman\Lib\Timer;
 use Workerman\Protocols\Http as WorkerHttp;
 use Workerman\Worker;
@@ -24,8 +23,9 @@ use Workerman\Worker;
 class Http extends Server
 {
     protected $app;
-    protected $appPath;
+    protected $rootPath;
     protected $root;
+    protected $appInit;
     protected $monitor;
     protected $lastMtime;
 
@@ -48,14 +48,19 @@ class Http extends Server
         }
     }
 
-    public function setRoot($root)
+    public function setRootPath($path)
     {
-        $this->root = $root;
+        $this->rootPath = $path;
     }
 
-    public function setAppPath($path)
+    public function appInit(\Closure $closure)
     {
-        $this->appPath = $path;
+        $this->appInit = $closure;
+    }
+
+    public function setRoot($path)
+    {
+        $this->root = $path;
     }
 
     public function setStaticOption($name, $value)
@@ -93,15 +98,20 @@ class Http extends Server
      */
     public function onWorkerStart($worker)
     {
-        $this->app       = new Application($this->appPath);
+        $this->app = new Application($this->rootPath);
+
+        if ($this->appInit) {
+            call_user_func_array($this->appInit, [$this->app]);
+        }
+
         $this->lastMtime = time();
 
-        $this->app->workerman = $worker;
+        if (!$this->app->isMulti()) {
+            // 应用初始化
+            $this->app->initialize();
+        }
 
-        // 指定日志类驱动
-        Loader::addClassMap([
-            'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
-        ]);
+        $this->app->workerman = $worker;
 
         Facade::bind([
             'think\facade\Cookie'     => Cookie::class,
@@ -110,10 +120,7 @@ class Http extends Server
             facade\Http::class        => Http::class,
         ]);
 
-        // 应用初始化
-        $this->app->initialize();
-
-        $this->app->bindTo([
+        $this->app->bind([
             'cookie'  => Cookie::class,
             'session' => Session::class,
         ]);

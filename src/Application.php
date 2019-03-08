@@ -12,6 +12,7 @@
 namespace think\worker;
 
 use think\App;
+use think\Db;
 use think\Error;
 use think\exception\HttpException;
 use Workerman\Protocols\Http as WorkerHttp;
@@ -31,30 +32,30 @@ class Application extends App
     {
         try {
             ob_start();
-            // 重置应用的开始时间和内存占用
-            $this->beginTime = microtime(true);
-            $this->beginMem  = memory_get_usage();
 
-            // 销毁当前请求对象实例
-            $this->delete('think\Request');
-
-            $pathinfo = ltrim(strpos($_SERVER['REQUEST_URI'], '?') ? strstr($_SERVER['REQUEST_URI'], '?', true) : $_SERVER['REQUEST_URI'], '/');
-
-            $this->request->setPathinfo($pathinfo);
+            // 重置数据库查询次数
+            Db::$queryTimes = 0;
 
             if ($this->config->get('session.auto_start')) {
                 WorkerHttp::sessionStart();
             }
 
+            // 销毁当前请求对象实例
+            $this->delete('think\Request');
             // 更新请求对象实例
             $this->route->setRequest($this->request);
+
+            if ($this->isMulti()) {
+                // 应用初始化
+                $this->initialize();
+            }
 
             $response = $this->run();
             $response->send();
             $content = ob_get_clean();
 
             // Trace调试注入
-            if ($this->env->get('app_trace', $this->config->get('app_trace'))) {
+            if ($this->env->get('app_trace', $this->config->get('app.app_trace'))) {
                 $this->debug->inject($response, $content);
             }
 

@@ -1,4 +1,4 @@
-ThinkPHP 5.1 Workerman 扩展
+ThinkPHP 5.2 Workerman 扩展
 ===============
 
 ## 安装

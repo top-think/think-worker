@@ -57,7 +57,7 @@ class Server extends Command
             return false;
         }
 
-        $this->config = Config::pull('worker_server');
+        $this->config = Config::get('worker_server');
 
         if ('start' == $action) {
             $output->writeln('Starting Workerman server...');

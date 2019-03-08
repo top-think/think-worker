@@ -1,6 +1,6 @@
 {
     "name": "topthink/think-worker",
-    "description": "workerman extend for thinkphp5.1",
+    "description": "workerman extend for thinkphp5.2",
     "license": "Apache-2.0",
     "type": "think-extend",
     "authors": [
@@ -13,7 +13,7 @@
         "workerman/workerman": "^3.3.0",
         "workerman/gateway-worker": "^3.0.0",
         "topthink/think-installer": "^2.0",
-        "topthink/framework": "^5.1.18"
+        "topthink/framework": "5.2.*-dev"
     },
     "autoload": {
         "psr-4": {

@@ -16,8 +16,8 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
+use think\facade\App;
 use think\facade\Config;
-use think\facade\Env;
 use think\worker\Http as HttpServer;
 
 /**
@@ -60,7 +60,7 @@ class Worker extends Command
             $output->writeln('Starting Workerman http server...');
         }
 
-        $this->config = Config::pull('worker');
+        $this->config = Config::get('worker');
 
         if (isset($this->config['context'])) {
             $context = $this->config['context'];
@@ -75,15 +75,19 @@ class Worker extends Command
         $worker = new HttpServer($host, $port, $context);
 
         if (empty($this->config['pidFile'])) {
-            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
+            $this->config['pidFile'] = App::getRootPath() . 'runtime/worker.pid';
         }
 
         // 避免pid混乱
         $this->config['pidFile'] .= '_' . $port;
 
-        // 设置应用目录
-        $worker->setAppPath($this->config['app_path']);
-        unset($this->config['app_path']);
+        // 设置应用根目录
+        $worker->setRootPath(App::getRootPath());
+
+        // 应用设置
+        if (!empty($this->config['app_init'])) {
+            $worker->appInit($this->config['app_init']);
+        }
 
         // 开启守护进程模式
         if ($this->input->hasOption('daemon')) {
@@ -98,14 +102,14 @@ class Worker extends Command
 
         // 设置网站目录
         if (empty($this->config['root'])) {
-            $this->config['root'] = Env::get('root_path') . 'public';
+            $this->config['root'] = App::getRootPath() . 'public';
         }
 
         $worker->setRoot($this->config['root']);
         unset($this->config['root']);
 
         // 设置文件监控
-        if (DIRECTORY_SEPARATOR !== '\\' && (Env::get('app_debug') || !empty($this->config['file_monitor']))) {
+        if (DIRECTORY_SEPARATOR !== '\\' && (App::isDebug() || !empty($this->config['file_monitor']))) {
             $interval = isset($this->config['file_monitor_interval']) ? $this->config['file_monitor_interval'] : 2;
             $paths    = isset($this->config['file_monitor_path']) ? $this->config['file_monitor_path'] : [];
             $worker->setMonitor($interval, $paths);

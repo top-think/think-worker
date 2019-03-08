@@ -10,6 +10,7 @@
 // +----------------------------------------------------------------------
 namespace think\worker;
 
+use think\exception\ClassNotFoundException;
 use think\Session as BaseSession;
 use Workerman\Protocols\Http as WorkerHttp;
 
@@ -25,7 +26,7 @@ class Session extends BaseSession
      * @return void
      * @throws \think\Exception
      */
-    public function init(array $config = [])
+    public function init(array $config = []): void
     {
         $config = $config ?: $this->config;
 
@@ -108,8 +109,6 @@ class Session extends BaseSession
         } else {
             $this->init = false;
         }
-
-        return $this;
     }
 
     /**
@@ -117,7 +116,7 @@ class Session extends BaseSession
      * @access public
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         if (is_null($this->init)) {
             $this->init();
@@ -136,7 +135,7 @@ class Session extends BaseSession
      * @access public
      * @return void
      */
-    public function start()
+    public function start(): void
     {
         WorkerHttp::sessionStart();
 
@@ -148,7 +147,7 @@ class Session extends BaseSession
      * @access public
      * @return void
      */
-    public function pause()
+    public function pause(): void
     {
         // 暂停session
         WorkerHttp::sessionWriteClose();
