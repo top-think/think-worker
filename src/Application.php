@@ -48,6 +48,9 @@ class Application extends App
             if ($this->isMulti()) {
                 // 应用初始化
                 $this->initialize();
+            } else {
+                $this->beginTime = microtime(true);
+                $this->beginMem  = memory_get_usage();
             }
 
             $response = $this->run();
