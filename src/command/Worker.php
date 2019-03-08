@@ -87,6 +87,7 @@ class Worker extends Command
         // 应用设置
         if (!empty($this->config['app_init'])) {
             $worker->appInit($this->config['app_init']);
+            unset($this->config['app_init']);
         }
 
         // 开启守护进程模式
@@ -110,8 +111,8 @@ class Worker extends Command
 
         // 设置文件监控
         if (DIRECTORY_SEPARATOR !== '\\' && (App::isDebug() || !empty($this->config['file_monitor']))) {
-            $interval = isset($this->config['file_monitor_interval']) ? $this->config['file_monitor_interval'] : 2;
-            $paths    = isset($this->config['file_monitor_path']) ? $this->config['file_monitor_path'] : [];
+            $interval = $this->config['file_monitor_interval'] ?? 2;
+            $paths    = $this->config['file_monitor_path'] ?? [App::getAppPath(), App::getConfigPath()];
             $worker->setMonitor($interval, $paths);
             unset($this->config['file_monitor'], $this->config['file_monitor_interval'], $this->config['file_monitor_path']);
         }

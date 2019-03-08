@@ -126,7 +126,7 @@ class Http extends Server
         ]);
 
         if (0 == $worker->id && $this->monitor) {
-            $paths = $this->monitor['path'] ?: [$this->app->getAppPath(), $this->app->getConfigPath()];
+            $paths = $this->monitor['path'];
             $timer = $this->monitor['interval'] ?: 2;
 
             Timer::add($timer, function () use ($paths) {
