@@ -46,6 +46,8 @@ class Application extends App
             $this->route->setRequest($this->request);
 
             if ($this->isMulti()) {
+                $this->namespace = null;
+                $this->appPath   = null;
                 // 应用初始化
                 $this->initialize();
             } else {
