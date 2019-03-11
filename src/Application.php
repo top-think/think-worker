@@ -12,9 +12,10 @@
 namespace think\worker;
 
 use think\App;
-use think\Db;
 use think\Error;
 use think\exception\HttpException;
+use think\facade\Db;
+use think\facade\Log;
 use Workerman\Protocols\Http as WorkerHttp;
 
 /**
@@ -33,8 +34,7 @@ class Application extends App
         try {
             ob_start();
 
-            // 重置数据库查询次数
-            Db::$queryTimes = 0;
+            Log::clear();
 
             if ($this->config->get('session.auto_start')) {
                 WorkerHttp::sessionStart();
@@ -54,6 +54,9 @@ class Application extends App
                 $this->beginTime = microtime(true);
                 $this->beginMem  = memory_get_usage();
             }
+
+            // 数据库初始化
+            Db::init();
 
             $response = $this->run();
             $response->send();
