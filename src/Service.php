@@ -10,13 +10,13 @@
 // +----------------------------------------------------------------------
 namespace think\worker;
 
-use think\facade\Console;
+use think\Service as BaseService;
 
-class Service
+class Service extends BaseService
 {
     public function register()
     {
-        Console::addCommands([
+        $this->commands([
             'worker'         => '\\think\\worker\\command\\Worker',
             'worker:server'  => '\\think\\worker\\command\\Server',
             'worker:gateway' => '\\think\\worker\\command\\GatewayWorker',
