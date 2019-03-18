@@ -18,12 +18,14 @@
     "autoload": {
         "psr-4": {
             "think\\worker\\": "src"
-        },
-        "files": [
-            "src/command.php"
-        ]
+        }
     },
     "extra": {
+        "think":{
+            "services":[
+                "think\\worker\\Service"
+            ]
+        },
         "think-config": {
             "worker": "src/config/worker.php",
             "worker_server": "src/config/server.php",

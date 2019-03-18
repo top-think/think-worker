@@ -8,9 +8,20 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
+namespace think\worker;
 
-\think\Console::addDefaultCommands([
-    'worker'         => '\\think\\worker\\command\\Worker',
-    'worker:server'  => '\\think\\worker\\command\\Server',
-    'worker:gateway' => '\\think\\worker\\command\\GatewayWorker',
-]);
+use think\App;
+use think\facade\Console;
+
+class Service
+{
+    public function register(App $app)
+    {
+        Console::addCommands([
+            'worker'         => '\\think\\worker\\command\\Worker',
+            'worker:server'  => '\\think\\worker\\command\\Server',
+            'worker:gateway' => '\\think\\worker\\command\\GatewayWorker',
+        ]);
+
+    }
+}
