@@ -10,12 +10,11 @@
 // +----------------------------------------------------------------------
 namespace think\worker;
 
-use think\App;
 use think\facade\Console;
 
 class Service
 {
-    public function register(App $app)
+    public function register()
     {
         Console::addCommands([
             'worker'         => '\\think\\worker\\command\\Worker',
