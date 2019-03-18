@@ -58,7 +58,7 @@ class Application extends App
             // 数据库初始化
             Db::init();
 
-            $response = $this->run();
+            $response = $this->http->run();
             $response->send();
             $content = ob_get_clean();
 
@@ -82,6 +82,15 @@ class Application extends App
         } catch (\Throwable $e) {
             $this->exception($connection, $e);
         }
+    }
+
+    /**
+     * 是否运行在命令行下
+     * @return bool
+     */
+    public function runningInConsole()
+    {
+        return false;
     }
 
     protected function httpResponseCode($code = 200)
