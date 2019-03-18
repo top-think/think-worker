@@ -12,7 +12,6 @@
 namespace think\worker;
 
 use think\App;
-use think\Error;
 use think\exception\HttpException;
 use think\facade\Db;
 use think\facade\Log;
@@ -60,7 +59,7 @@ class Application extends App
 
             $response = $this->http->run();
             $response->send();
-            $content = ob_get_clean();
+            $content = ob_get_clean() ?: '';
 
             // Trace调试注入
             if ($this->env->get('app_trace', $this->config->get('app.app_trace'))) {
@@ -75,11 +74,7 @@ class Application extends App
             }
 
             $connection->send($content);
-        } catch (HttpException $e) {
-            $this->exception($connection, $e);
-        } catch (\Exception $e) {
-            $this->exception($connection, $e);
-        } catch (\Throwable $e) {
+        } catch (HttpException | \Exception | \Throwable $e) {
             $this->exception($connection, $e);
         }
     }
@@ -101,7 +96,7 @@ class Application extends App
     protected function exception($connection, $e)
     {
         if ($e instanceof \Exception) {
-            $handler = Error::getExceptionHandler();
+            $handler = $this->error_handle;
             $handler->report($e);
 
             $resp    = $handler->render($e);
