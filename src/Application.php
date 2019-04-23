@@ -34,6 +34,12 @@ class Application extends App
             $this->beginMem  = memory_get_usage();
             $this->db->clearQueryTimes();
 
+            $pathinfo = ltrim(strpos($_SERVER['REQUEST_URI'], '?') ? strstr($_SERVER['REQUEST_URI'], '?', true) : $_SERVER['REQUEST_URI'], '/');
+
+            $this->request
+                ->setPathinfo($pathinfo)
+                ->withInput($GLOBALS['HTTP_RAW_REQUEST_DATA']);
+
             $response = $this->http->run();
 
             ob_start();
