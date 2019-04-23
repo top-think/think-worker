@@ -12,6 +12,7 @@ namespace think\worker;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Workerman\Connection\TcpConnection;
 use Workerman\Lib\Timer;
 use Workerman\Protocols\Http as WorkerHttp;
 use Workerman\Worker;
@@ -27,6 +28,8 @@ class Http extends Server
     protected $appInit;
     protected $monitor;
     protected $lastMtime;
+    /** @var array Mime mapping. */
+    protected static $mimeTypeMap = [];
 
     /**
      * 架构函数
@@ -92,11 +95,12 @@ class Http extends Server
     /**
      * onWorkerStart 事件回调
      * @access public
-     * @param  \Workerman\Worker    $worker
+     * @param  \Workerman\Worker $worker
      * @return void
      */
     public function onWorkerStart($worker)
     {
+        $this->initMimeTypeMap();
         $this->app = new Application($this->rootPath);
 
         if ($this->appInit) {
@@ -144,14 +148,14 @@ class Http extends Server
     /**
      * onMessage 事件回调
      * @access public
-     * @param  \Workerman\Connection\TcpConnection    $connection
-     * @param  mixed                                  $data
+     * @param  TcpConnection $connection
+     * @param  mixed         $data
      * @return void
      */
     public function onMessage($connection, $data)
     {
         $uri  = parse_url($_SERVER['REQUEST_URI']);
-        $path = isset($uri['path']) ? $uri['path'] : '/';
+        $path = $uri['path'] ?? '/';
 
         $file = $this->root . $path;
 
@@ -162,6 +166,13 @@ class Http extends Server
         }
     }
 
+    /**
+     * 访问资源文件
+     * @access protected
+     * @param  TcpConnection $connection
+     * @param  string        $file 文件名
+     * @return string
+     */
     protected function sendFile($connection, $file)
     {
         $info        = stat($file);
@@ -187,7 +198,7 @@ class Http extends Server
         } else {
             WorkerHttp::header('Content-Type: application/octet-stream');
             $fileinfo = pathinfo($file);
-            $filename = isset($fileinfo['filename']) ? $fileinfo['filename'] : '';
+            $filename = $fileinfo['filename'] ?? '';
             WorkerHttp::header('Content-Disposition: attachment; filename="' . $filename . '"');
         }
 
@@ -206,14 +217,57 @@ class Http extends Server
 
     /**
      * 获取文件类型信息
-     * @access public
+     * @access protected
+     * @param  string $filename 文件名
      * @return string
      */
-    public function getMimeType($filename)
+    protected function getMimeType(string $filename)
     {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $file_info = pathinfo($filename);
+        $extension = $file_info['extension'] ?? '';
 
-        return finfo_file($finfo, $filename);
+        if (isset(self::$mimeTypeMap[$extension])) {
+            $mime = self::$mimeTypeMap[$extension];
+        } else {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime  = finfo_file($finfo, $filename);
+        }
+
+        return $mime;
+    }
+
+    /**
+     * Init mime map.
+     *
+     * @return void
+     * @throws \Exception
+     */
+    protected function initMimeTypeMap()
+    {
+        $mime_file = WorkerHttp::getMimeTypesFile();
+
+        if (!is_file($mime_file)) {
+            Worker::log("$mime_file mime.type file not fond");
+            return;
+        }
+
+        $items = file($mime_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        if (!is_array($items)) {
+            Worker::log("get $mime_file mime.type content fail");
+            return;
+        }
+
+        foreach ($items as $content) {
+            if (preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match)) {
+                $mime_type                      = $match[1];
+                $workerman_file_extension_var   = $match[2];
+                $workerman_file_extension_array = explode(' ', substr($workerman_file_extension_var, 0, -1));
+                foreach ($workerman_file_extension_array as $workerman_file_extension) {
+                    self::$mimeTypeMap[$workerman_file_extension] = $mime_type;
+                }
+            }
+        }
     }
 
     /**
