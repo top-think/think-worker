@@ -30,12 +30,13 @@ class Application extends App
     public function worker($connection)
     {
         try {
-            ob_start();
-
             $this->beginTime = microtime(true);
             $this->beginMem  = memory_get_usage();
+            $this->db->clearQueryTimes();
 
             $response = $this->http->run();
+
+            ob_start();
             $response->send();
             $this->http->end($response);
 
