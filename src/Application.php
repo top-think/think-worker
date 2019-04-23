@@ -12,9 +12,8 @@
 namespace think\worker;
 
 use think\App;
+use think\exception\Handle;
 use think\exception\HttpException;
-use think\facade\Db;
-use think\facade\Log;
 use Workerman\Protocols\Http as WorkerHttp;
 
 /**
@@ -33,38 +32,11 @@ class Application extends App
         try {
             ob_start();
 
-            Log::clear();
-
-            if ($this->config->get('session.auto_start')) {
-                WorkerHttp::sessionStart();
-            }
-
-            // 销毁当前请求对象实例
-            $this->delete('think\Request');
-            // 更新请求对象实例
-            $this->route->setRequest($this->request);
-
-            if ($this->isMulti()) {
-                $this->namespace = null;
-                $this->appPath   = null;
-                // 应用初始化
-                $this->initialize();
-            } else {
-                $this->beginTime = microtime(true);
-                $this->beginMem  = memory_get_usage();
-            }
-
-            // 数据库初始化
-            Db::init();
-
             $response = $this->http->run();
             $response->send();
-            $content = ob_get_clean() ?: '';
+            $this->http->end($response);
 
-            // Trace调试注入
-            if ($this->env->get('app_trace', $this->config->get('app.app_trace'))) {
-                $this->debug->inject($response, $content);
-            }
+            $content = ob_get_clean() ?: '';
 
             $this->httpResponseCode($response->getCode());
 
@@ -96,10 +68,10 @@ class Application extends App
     protected function exception($connection, $e)
     {
         if ($e instanceof \Exception) {
-            $handler = $this->error_handle;
+            $handler = $this->make(Handle::class);
             $handler->report($e);
 
-            $resp    = $handler->render($e);
+            $resp    = $handler->render($this->request, $e);
             $content = $resp->getContent();
             $code    = $resp->getCode();
 

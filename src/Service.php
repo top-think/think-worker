@@ -21,6 +21,5 @@ class Service extends BaseService
             'worker:server'  => '\\think\\worker\\command\\Server',
             'worker:gateway' => '\\think\\worker\\command\\GatewayWorker',
         ]);
-
     }
 }

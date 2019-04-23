@@ -104,27 +104,18 @@ class Http extends Server
             call_user_func_array($this->appInit, [$this->app]);
         }
 
-        $this->lastMtime = time();
+        $this->app->initialize();
 
-        if (!$this->app->isMulti()) {
-            // 应用初始化
-            $this->app->initialize();
-        }
+        $this->lastMtime = time();
 
         $this->app->workerman = $worker;
 
-        Facade::bind([
+        $this->app->bind([
             'think\facade\Cookie'     => Cookie::class,
-            'think\facade\Session'    => Session::class,
             'think\facade\Log'        => Log::class,
             facade\Application::class => Application::class,
-            facade\Http::class        => Http::class,
-        ]);
-
-        $this->app->bind([
-            'cookie'  => Cookie::class,
-            'session' => Session::class,
-            'log'     => Log::class,
+            'cookie'                  => Cookie::class,
+            'log'                     => Log::class,
         ]);
 
         if (0 == $worker->id && $this->monitor) {

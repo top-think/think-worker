@@ -8,7 +8,6 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-use think\facade\Env;
 
 // +----------------------------------------------------------------------
 // | Workerman设置 仅对 php think worker 指令有效
@@ -27,5 +26,5 @@ return [
     'name'                  => 'thinkphp',
     'count'                 => 4,
     'daemonize'             => false,
-    'pidFile'               => Env::get('runtime_path') . 'worker.pid',
+    'pidFile'               => App::getRuntimePath() . 'worker.pid',
 ];
