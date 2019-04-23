@@ -1,7 +1,8 @@
-ThinkPHP 5.2 Workerman 扩展
+ThinkPHP 6.0 Workerman 扩展
 ===============
 
 ## 安装
+
 composer require topthink/think-worker
 
 ## 使用方法
