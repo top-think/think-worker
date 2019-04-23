@@ -16,8 +16,8 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
+use think\facade\App;
 use think\facade\Config;
-use think\facade\Env;
 use think\worker\Server as WorkerServer;
 use Workerman\Worker;
 
@@ -97,7 +97,7 @@ class Server extends Command
         $worker = new Worker($socket, $context);
 
         if (empty($this->config['pidFile'])) {
-            $this->config['pidFile'] = Env::get('runtime_path') . 'worker.pid';
+            $this->config['pidFile'] = App::getRootPath() . 'runtime/worker.pid';
         }
 
         // 避免pid混乱

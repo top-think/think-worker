@@ -12,7 +12,6 @@ namespace think\worker;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use think\Facade;
 use Workerman\Lib\Timer;
 use Workerman\Protocols\Http as WorkerHttp;
 use Workerman\Worker;
@@ -111,11 +110,9 @@ class Http extends Server
         $this->app->workerman = $worker;
 
         $this->app->bind([
-            'think\facade\Cookie'     => Cookie::class,
-            'think\facade\Log'        => Log::class,
-            facade\Application::class => Application::class,
-            'cookie'                  => Cookie::class,
-            'log'                     => Log::class,
+            'think\Application' => Application::class,
+            'think\Cookie'      => Cookie::class,
+            'cookie'            => Cookie::class,
         ]);
 
         if (0 == $worker->id && $this->monitor) {

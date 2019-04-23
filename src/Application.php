@@ -32,6 +32,9 @@ class Application extends App
         try {
             ob_start();
 
+            $this->beginTime = microtime(true);
+            $this->beginMem  = memory_get_usage();
+
             $response = $this->http->run();
             $response->send();
             $this->http->end($response);

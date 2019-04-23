@@ -26,5 +26,5 @@ return [
     'name'                  => 'thinkphp',
     'count'                 => 4,
     'daemonize'             => false,
-    'pidFile'               => App::getRuntimePath() . 'worker.pid',
+    'pidFile'               => '',
 ];
