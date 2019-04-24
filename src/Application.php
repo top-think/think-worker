@@ -40,6 +40,10 @@ class Application extends App
                 ->setPathinfo($pathinfo)
                 ->withInput($GLOBALS['HTTP_RAW_REQUEST_DATA']);
 
+            while (ob_get_level() > 1) {
+                ob_end_clean();
+            }
+
             ob_start();
             $response = $this->http->run();
             $content  = ob_get_clean();
