@@ -40,13 +40,16 @@ class Application extends App
                 ->setPathinfo($pathinfo)
                 ->withInput($GLOBALS['HTTP_RAW_REQUEST_DATA']);
 
+            ob_start();
             $response = $this->http->run();
+            $content  = ob_get_clean();
 
             ob_start();
+
             $response->send();
             $this->http->end($response);
 
-            $content = ob_get_clean() ?: '';
+            $content .= ob_get_clean() ?: '';
 
             $this->httpResponseCode($response->getCode());
 

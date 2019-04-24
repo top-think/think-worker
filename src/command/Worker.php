@@ -135,7 +135,7 @@ class Worker extends Command
         $worker->start();
     }
 
-    protected function getHost($default = '0.0.0.0')
+    protected function getHost(string $default = '0.0.0.0')
     {
         if ($this->input->hasOption('host')) {
             $host = $this->input->getOption('host');
@@ -146,7 +146,7 @@ class Worker extends Command
         return $host;
     }
 
-    protected function getPort($default = '2346')
+    protected function getPort(string $default = '2346')
     {
         if ($this->input->hasOption('port')) {
             $port = $this->input->getOption('port');

@@ -74,7 +74,7 @@ class GatewayWorker extends Command
             $port = !empty($option['port']) ? $option['port'] : '2347';
         }
 
-        $this->start($host, $port, $option);
+        $this->start($host, (int) $port, $option);
     }
 
     /**
@@ -85,7 +85,7 @@ class GatewayWorker extends Command
      * @param  array    $option 参数
      * @return void
      */
-    public function start($host, $port, $option = [])
+    public function start(string $host, int $port, array $option = [])
     {
         $registerAddress = !empty($option['registerAddress']) ? $option['registerAddress'] : '127.0.0.1:1236';
 
@@ -97,7 +97,7 @@ class GatewayWorker extends Command
 
         // 启动businessWorker
         if (!empty($option['businessWorker_deploy'])) {
-            $this->businessWorker($registerAddress, isset($option['businessWorker']) ? $option['businessWorker'] : []);
+            $this->businessWorker($registerAddress, $option['businessWorker'] ?? []);
         }
 
         // 启动gateway
@@ -114,7 +114,7 @@ class GatewayWorker extends Command
      * @param  string   $registerAddress
      * @return void
      */
-    public function register($registerAddress)
+    public function register(string $registerAddress)
     {
         // 初始化register
         new Register('text://' . $registerAddress);
@@ -127,7 +127,7 @@ class GatewayWorker extends Command
      * @param  array    $option 参数
      * @return void
      */
-    public function businessWorker($registerAddress, $option = [])
+    public function businessWorker(string $registerAddress, array $option = [])
     {
         // 初始化 bussinessWorker 进程
         $worker = new BusinessWorker();
@@ -140,13 +140,13 @@ class GatewayWorker extends Command
     /**
      * 启动gateway
      * @access public
-     * @param  string   $registerAddress registerAddress
-     * @param  string   $host 服务地址
-     * @param  integer  $port 监听端口
-     * @param  array    $option 参数
+     * @param  string  $registerAddress registerAddress
+     * @param  string  $host 服务地址
+     * @param  integer $port 监听端口
+     * @param  array   $option 参数
      * @return void
      */
-    public function gateway($registerAddress, $host, $port, $option = [])
+    public function gateway(string $registerAddress, string $host, int $port, array $option = [])
     {
         // 初始化 gateway 进程
         if (!empty($option['socket'])) {
@@ -158,7 +158,7 @@ class GatewayWorker extends Command
             unset($option['host'], $option['port'], $option['protocol']);
         }
 
-        $gateway = new Gateway($socket, isset($option['context']) ? $option['context'] : []);
+        $gateway = new Gateway($socket, $option['context'] ?? []);
 
         // 以下设置参数都可以在配置文件中重新定义覆盖
         $gateway->name                 = 'Gateway';
@@ -184,11 +184,11 @@ class GatewayWorker extends Command
     /**
      * 设置参数
      * @access protected
-     * @param  Worker   $worker Worker对象
-     * @param  array    $option 参数
+     * @param  Worker $worker Worker对象
+     * @param  array  $option 参数
      * @return void
      */
-    protected function option($worker, array $option = [])
+    protected function option(Worker $worker, array $option = [])
     {
         // 设置参数
         if (!empty($option)) {

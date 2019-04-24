@@ -126,7 +126,7 @@ class Server extends Command
         Worker::runAll();
     }
 
-    protected function startServer($class)
+    protected function startServer(string $class)
     {
         if (class_exists($class)) {
             $worker = new $class;
