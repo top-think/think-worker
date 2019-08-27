@@ -115,7 +115,6 @@ class Http extends Server
 
         $this->app->bind([
             'think\Cookie' => Cookie::class,
-            'cookie'       => Cookie::class,
         ]);
 
         if (0 == $worker->id && $this->monitor) {
