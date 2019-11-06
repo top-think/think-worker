@@ -28,9 +28,10 @@ class Cookie extends BaseCookie
      * @param  string $domain 有效域名/子域名
      * @param  bool   $secure 是否仅仅通过HTTPS
      * @param  bool   $httponly 仅可通过HTTP访问
+     * @param  string $samesite 防止CSRF攻击和用户追踪
      * @return void
      */
-    protected function saveCookie(string $name, string $value, int $expire, string $path, string $domain, bool $secure, bool $httponly): void
+    protected function saveCookie(string $name, string $value, int $expire, string $path, string $domain, bool $secure, bool $httponly, string $samesite): void
     {
         WorkerHttp::setCookie($name, $value, $expire, $path, $domain, $secure, $httponly);
     }
