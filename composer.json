@@ -30,5 +30,6 @@
                 "gateway_worker": "src/config/gateway.php"
             }
         }
-    }
+    },
+    "minimum-stability": "dev"
 }
