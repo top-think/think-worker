@@ -79,7 +79,7 @@ class Application extends App
 
     protected function httpResponseCode($code = 200)
     {
-        WorkerHttp::header('HTTP/1.1', true, $code);
+        WorkerHttp::responseCode($code);
     }
 
     protected function exception($connection, $e)
