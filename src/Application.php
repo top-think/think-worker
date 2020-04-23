@@ -62,7 +62,11 @@ class Application extends App
                 WorkerHttp::header($name . (!is_null($val) ? ':' . $val : ''));
             }
 
-            $connection->send($content);
+            if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                $connection->send($content);
+            } else {
+                $connection->close($content);
+            }
         } catch (HttpException | \Exception | \Throwable $e) {
             $this->exception($connection, $e);
         }
