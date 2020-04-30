@@ -38,7 +38,7 @@ class Application extends App
 
             $this->request
                 ->setPathinfo($pathinfo)
-                ->withInput($GLOBALS['HTTP_RAW_REQUEST_DATA']);
+                ->withInput($GLOBALS['HTTP_RAW_POST_DATA']);
 
             while (ob_get_level() > 1) {
                 ob_end_clean();
