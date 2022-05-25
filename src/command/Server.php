@@ -97,7 +97,7 @@ class Server extends Command
         $worker = new Worker($socket, $context);
 
         if (empty($this->config['pidFile'])) {
-            $this->config['pidFile'] = App::getRootPath() . 'runtime/worker.pid';
+            $this->config['pidFile'] = App::getRuntimePath() . 'worker.pid';
         }
 
         // 避免pid混乱
