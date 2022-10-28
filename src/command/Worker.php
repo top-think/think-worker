@@ -75,7 +75,7 @@ class Worker extends Command
         $worker = new HttpServer($host, $port, $context);
 
         if (empty($this->config['pidFile'])) {
-            $this->config['pidFile'] = App::getRootPath() . 'runtime/worker.pid';
+            $this->config['pidFile'] = App::getRuntimePath() . 'worker.pid';
         }
 
         // 避免pid混乱
