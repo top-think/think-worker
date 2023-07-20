@@ -11,7 +11,7 @@
     "require": {
         "workerman/workerman": "^3.5.23",
         "workerman/gateway-worker": "^3.0.0",
-        "topthink/framework": "^6.0|^8.0",
+        "topthink/framework": "^8.0",
         "ext-fileinfo": "*"
     },
     "autoload": {
