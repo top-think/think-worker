@@ -45,7 +45,7 @@ class Application extends App
             }
 
             ob_start();
-            $response = $this->http->run();
+            $response = $this->http->run($this->request);
             $content  = ob_get_clean();
 
             ob_start();
