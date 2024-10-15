@@ -29,8 +29,6 @@ php think worker [start|stop|reload|restart|status]
 
 workerman的参数可以在应用配置目录下的worker.php里面配置。
 
-由于onWorkerStart运行的时候没有HTTP_HOST，因此最好在应用配置文件中设置app_host
-
 ### SocketServer
 
 在命令行启动服务端
