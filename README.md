@@ -9,7 +9,16 @@ composer require topthink/think-worker
 ```
 
 ## 说明
-> 由于windows下无法在一个文件里启动多个worker，所以本扩展不支持windows平台
+
+本扩展基于 Workerman 5，支持 Linux 与 Windows 平台。
+
+### Windows 支持说明
+
+- Windows 下 Workerman 无法在一个文件里启动多个 worker，因此本扩展在 Windows 下会为每个 worker（http、conduit、各队列、热更新）生成独立的启动文件到 `runtime/win/` 目录，并以多进程方式写入这些文件，由 Workerman master 统一监控与重启。
+- 生成文件为运行时产物，`runtime` 目录本身已被 git 忽略，无需手动清理。
+- Windows 下支持热更新：`hot_update.enable = true` 时，热更新 watcher 检测到文件变更后写入重载标记，reloadable worker 轮询到标记后退出，由 master 自动重启并加载新代码。
+- Windows 下进程间通信（conduit）使用 `tcp://` 协议，可通过 `worker.conduit` 配置 `host` 与 `port`（默认 `127.0.0.1:9999`）；Linux 下仍使用 `unix://` 域套接字。
+- Windows 下队列 worker 以独立进程运行，并自动跳过 `pcntl_signal`/`pcntl_alarm` 等 Linux 专属信号调用。
 
 ## 使用方法
 

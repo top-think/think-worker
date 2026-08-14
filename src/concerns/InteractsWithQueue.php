@@ -14,40 +14,44 @@ trait InteractsWithQueue
         $workers = $this->getConfig('queue.workers', []);
 
         foreach ($workers as $queue => $options) {
+            $this->createQueueWorker($queue, $options);
+        }
+    }
 
-            if (strpos($queue, '@') !== false) {
-                [$queue, $connection] = explode('@', $queue);
-            } else {
-                $connection = null;
+    protected function createQueueWorker(string $queue, array $options = [])
+    {
+        if (strpos($queue, '@') !== false) {
+            [$queue, $connection] = explode('@', $queue);
+        } else {
+            $connection = null;
+        }
+
+        $workerNum = Arr::get($options, 'worker_num', 1);
+
+        $this->addWorker(function () use ($options, $connection, $queue) {
+            $delay   = Arr::get($options, 'delay', 0);
+            $sleep   = Arr::get($options, 'sleep', 3);
+            $tries   = Arr::get($options, 'tries', 0);
+            $timeout = Arr::get($options, 'timeout', 60);
+            $qWorker = $this->app->make(Worker::class);
+
+            if ($this->supportsAsyncSignals()) {
+                pcntl_signal(SIGALRM, function () {
+                    \think\worker\Worker::stopAll();
+                });
+
+                pcntl_alarm($timeout);
             }
 
-            $workerNum = Arr::get($options, 'worker_num', 1);
-
-            $this->addWorker(function () use ($options, $connection, $queue) {
-                $delay   = Arr::get($options, 'delay', 0);
-                $sleep   = Arr::get($options, 'sleep', 3);
-                $tries   = Arr::get($options, 'tries', 0);
-                $timeout = Arr::get($options, 'timeout', 60);
-                $qWorker = $this->app->make(Worker::class);
-
-                if ($this->supportsAsyncSignals()) {
-                    pcntl_signal(SIGALRM, function () {
-                        \think\worker\Worker::stopAll();
-                    });
-
-                    pcntl_alarm($timeout);
-                }
-
-                $this->createRunTimer(function () use ($connection, $queue, $delay, $sleep, $tries, $qWorker) {
-                    $this->runInSandbox(function () use ($connection, $queue, $delay, $sleep, $tries, $qWorker) {
-                        $qWorker->runNextJob($connection, $queue, $delay, $sleep, $tries);
-                    });
-                    if ($this->supportsAsyncSignals()) {
-                        pcntl_alarm(0);
-                    }
+            $this->createRunTimer(function () use ($connection, $queue, $delay, $sleep, $tries, $qWorker) {
+                $this->runInSandbox(function () use ($connection, $queue, $delay, $sleep, $tries, $qWorker) {
+                    $qWorker->runNextJob($connection, $queue, $delay, $sleep, $tries);
                 });
-            }, "queue [$queue]", $workerNum);
-        }
+                if ($this->supportsAsyncSignals()) {
+                    pcntl_alarm(0);
+                }
+            });
+        }, "queue [$queue]", $workerNum);
     }
 
     protected function supportsAsyncSignals()
@@ -63,11 +67,22 @@ trait InteractsWithQueue
         }, [], false);
     }
 
-    protected function prepareQueue()
+    protected function prepareQueue(?string $key = null)
     {
-        if ($this->getConfig('queue.enable', false)) {
-            $this->listenForEvents();
-            $this->createQueueWorkers();
+        if (!$this->getConfig('queue.enable', false)) {
+            return;
+        }
+
+        $this->listenForEvents();
+
+        $workers = $this->getConfig('queue.workers', []);
+
+        if ($key !== null) {
+            $workers = isset($workers[$key]) ? [$key => $workers[$key]] : [];
+        }
+
+        foreach ($workers as $queue => $options) {
+            $this->createQueueWorker($queue, $options);
         }
     }
 

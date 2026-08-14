@@ -3,8 +3,7 @@
 namespace think\worker\conduit\driver;
 
 use Exception;
-use Revolt\EventLoop;
-use Revolt\EventLoop\Suspension;
+use Fiber;
 use think\worker\conduit\Driver;
 use think\worker\conduit\driver\socket\Command;
 use think\worker\conduit\driver\socket\Event;
@@ -25,15 +24,21 @@ class Socket extends Driver
     protected $reconnectTimer;
     protected $pingInterval = 55;
 
-    /** @var array<int, array{0: Suspension, 1: int}> */
-    protected $suspensions = [];
-    protected $events      = [];
+    /** @var array<int, array{0: Fiber, 1: int}> */
+    protected $suspenders = [];
+    protected $events     = [];
 
     public function __construct(protected Manager $manager)
     {
-        $filename = runtime_path() . 'conduit.sock';
-        @unlink($filename);
-        $this->domain = "unix://{$filename}";
+        if (DIRECTORY_SEPARATOR === '/') {
+            $filename = runtime_path() . 'conduit.sock';
+            @unlink($filename);
+            $this->domain = "unix://{$filename}";
+        } else {
+            $host = $this->manager->getConfig('conduit.host', '127.0.0.1');
+            $port = (int) $this->manager->getConfig('conduit.port', 9999);
+            $this->domain = "tcp://{$host}:{$port}";
+        }
     }
 
     public function prepare()
@@ -44,9 +49,9 @@ class Socket extends Driver
 
     public function connect()
     {
-        $suspension       = EventLoop::getSuspension();
-        $this->connection = $this->createConnection($suspension);
-        $suspension->suspend();
+        $fiber            = $this->currentFiber();
+        $this->connection = $this->createConnection($fiber);
+        Fiber::suspend();
 
         Timer::add($this->pingInterval, function () {
             if ($this->connection) {
@@ -56,10 +61,10 @@ class Socket extends Driver
 
         Timer::add(1, function () {
             //检查是否超时
-            foreach ($this->suspensions as $id => $suspension) {
-                if (time() - $suspension[1] > 10) {
-                    $suspension[0]->throw(new Exception('conduit connection is timeout'));
-                    unset($this->suspensions[$id]);
+            foreach ($this->suspenders as $id => $suspender) {
+                if (time() - $suspender[1] > 10) {
+                    $suspender[0]->throw(new Exception('conduit connection is timeout'));
+                    unset($this->suspenders[$id]);
                 }
             }
         });
@@ -108,17 +113,17 @@ class Socket extends Driver
 
     protected function sendAndRecv(Command $command)
     {
-        $suspension = EventLoop::getSuspension();
+        $fiber = $this->currentFiber();
 
         $id = $this->id++;
 
         $command->id = $id;
 
-        $this->suspensions[$id] = [$suspension, time()];
+        $this->suspenders[$id] = [$fiber, time()];
 
         $this->send($command);
 
-        return $suspension->suspend();
+        return Fiber::suspend();
     }
 
     protected function send(Command $command)
@@ -130,16 +135,16 @@ class Socket extends Driver
         $this->connection->send(serialize($command));
     }
 
-    protected function createConnection(?Suspension $suspension = null)
+    protected function createConnection(?Fiber $fiber = null)
     {
         $connection = new AsyncTcpConnection($this->domain);
 
         $connection->protocol = Frame::class;
 
-        $connection->onConnect = function () use ($suspension) {
+        $connection->onConnect = function () use ($fiber) {
             $this->clearTimer();
-            if ($suspension) {
-                $suspension->resume();
+            if ($fiber) {
+                $fiber->resume();
             }
             //补订阅
             foreach ($this->events as $name => $callback) {
@@ -155,10 +160,10 @@ class Socket extends Driver
                 if (isset($this->events[$result->name])) {
                     $this->events[$result->name]($result->data);
                 }
-            } elseif (isset($result->id) && isset($this->suspensions[$result->id])) {
-                [$suspension] = $this->suspensions[$result->id];
-                $suspension->resume($result->data);
-                unset($this->suspensions[$result->id]);
+            } elseif (isset($result->id) && isset($this->suspenders[$result->id])) {
+                [$fiber] = $this->suspenders[$result->id];
+                $fiber->resume($result->data);
+                unset($this->suspenders[$result->id]);
             }
         };
 
@@ -174,6 +179,15 @@ class Socket extends Driver
         $connection->connect();
 
         return $connection;
+    }
+
+    protected function currentFiber(): Fiber
+    {
+        $fiber = Fiber::getCurrent();
+        if ($fiber === null) {
+            throw new Exception('conduit must be used inside a coroutine/fiber');
+        }
+        return $fiber;
     }
 
     protected function clearTimer()

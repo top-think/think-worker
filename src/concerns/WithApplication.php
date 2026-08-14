@@ -16,9 +16,9 @@ use Throwable;
 trait WithApplication
 {
     /**
-     * @var WorkerApp
+     * @var WorkerApp|null
      */
-    protected $app;
+    protected $app = null;
 
     protected function prepareApplication()
     {
@@ -68,10 +68,17 @@ trait WithApplication
      */
     public function runInSandbox(Closure $callable, ?object $key = null)
     {
+        // PHP 8.5 起 Reflection::setAccessible() 被弃用，think-container 与沙箱所用反射若被
+        // ThinkPHP 错误处理器升格为异常会导致请求中断，这里在请求处理期间屏蔽 E_DEPRECATED。
+        $errorReporting = error_reporting();
+        error_reporting($errorReporting & ~E_DEPRECATED);
+
         try {
             $this->getSandbox()->run($callable, $key);
         } catch (Throwable $e) {
             $this->logServerError($e);
+        } finally {
+            error_reporting($errorReporting);
         }
     }
 }

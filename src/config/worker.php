@@ -30,6 +30,18 @@ return [
         'enable'  => false,
         'workers' => [],
     ],
+    //进程间通信
+    'conduit'    => [
+        'enable' => true,
+        'host'   => '127.0.0.1',
+        'port'   => 9999,
+    ],
+    //静态文件
+    'static'     => [
+        'enable'      => true,
+        'public_path' => root_path('public'),
+        'extensions'  => ['css', 'js', 'html', 'htm', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'svg', 'woff', 'woff2', 'ttf', 'map', 'webp', 'txt'],
+    ],
     'hot_update' => [
         'enable'  => env('APP_DEBUG', false),
         'name'    => ['*.php'],
