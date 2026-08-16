@@ -44,6 +44,11 @@ trait InteractsWithServer
                 $this->watchWinReload();
             }
 
+            // Windows 下检测 master 存活，master 被强杀时子进程自动退出，避免孤儿进程占用端口
+            if (DIRECTORY_SEPARATOR !== '/') {
+                $this->watchMasterAlive();
+            }
+
             $func($worker);
         };
 
@@ -98,12 +103,99 @@ trait InteractsWithServer
      */
     protected function startWindows(): void
     {
-        $files = $this->createWindowsStartFiles();
+        // 使用随机 token 而非 PID：Windows PID 会被复用，复用碰撞会导致孤儿子进程误判 master 存活
+        $masterToken = bin2hex(random_bytes(8));
+        $heartbeat   = $this->winHeartbeatFile();
 
-        $this->launchWindows($files);
+        // 心跳、pid 等文件均写入 runtime/win，目录可能被缓存清理删除，先确保存在
+        $this->ensureWinRuntimeDir();
+
+        $this->guardAgainstDuplicateInstance($heartbeat);
+
+        // 先写入心跳再拉起子进程，避免子进程启动瞬间误判master已死
+        file_put_contents($heartbeat, $masterToken);
+        file_put_contents($this->winConsolePidFile($masterToken), (string) getmypid());
+
+        // 清理历史启动遗留的 pid 文件，避免随启动次数无限累积
+        $this->purgeStaleWinPidFiles($masterToken);
+
+        $files = $this->createWindowsStartFiles($masterToken);
+
+        $this->launchWindows($files, $heartbeat);
     }
 
-    protected function createWindowsStartFiles(): array
+    /**
+     * 确保 runtime/win 目录存在（runtime 缓存清理可能将其删除）。
+     */
+    protected function ensureWinRuntimeDir(): void
+    {
+        $dir = dirname($this->winHeartbeatFile());
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+    }
+
+    /**
+     * 拒绝重复启动：心跳新鲜且对应的控制进程仍存活，说明已有实例在运行。
+     */
+    protected function guardAgainstDuplicateInstance(string $heartbeat): void
+    {
+        clearstatcache(true, $heartbeat);
+
+        // 心跳已过期，旧实例要么正常退出要么已被清理
+        if (!is_file($heartbeat) || time() - (int) filemtime($heartbeat) >= 15) {
+            return;
+        }
+
+        $token = trim((string) file_get_contents($heartbeat));
+        $pid   = $this->readWinPidFile($this->winConsolePidFile($token));
+
+        if ($pid > 0 && $this->isWinPhpProcessAlive($pid)) {
+            throw new RuntimeException("think-worker already running (master pid {$pid}), stop it before starting a new one.");
+        }
+    }
+
+    protected function winConsolePidFile(string $token): string
+    {
+        return runtime_path() . 'win' . DIRECTORY_SEPARATOR . 'console_' . $token . '.pid';
+    }
+
+    /**
+     * 清理历史启动遗留的 pid 文件，仅保留当前 token 的两个文件。
+     */
+    protected function purgeStaleWinPidFiles(string $currentToken): void
+    {
+        $dir = dirname($this->winHeartbeatFile());
+
+        foreach (glob($dir . DIRECTORY_SEPARATOR . '*.pid') ?: [] as $file) {
+            $name = basename($file);
+
+            if ($name !== "console_{$currentToken}.pid" && $name !== "master_{$currentToken}.pid") {
+                @unlink($file);
+            }
+        }
+    }
+
+    protected function readWinPidFile(string $file): int
+    {
+        clearstatcache(true, $file);
+
+        if (!is_file($file)) {
+            return 0;
+        }
+
+        return (int) file_get_contents($file);
+    }
+
+    protected function isWinPhpProcessAlive(int $pid): bool
+    {
+        exec(sprintf('tasklist /FI "PID eq %d" /FI "IMAGENAME eq php.exe" 2>nul', $pid), $output);
+
+        return stripos(implode("\n", $output), 'php.exe') !== false;
+    }
+
+    protected function createWindowsStartFiles(string $masterToken): array
     {
         $root   = $this->container->getRootPath();
         $winDir = $root . 'runtime' . DIRECTORY_SEPARATOR . 'win' . DIRECTORY_SEPARATOR;
@@ -118,7 +210,7 @@ trait InteractsWithServer
             $safeType = str_replace([':', '\\', '/', '*', '?', '"', '<', '>', '|'], '_', $type);
             $file     = $winDir . 'start_' . $safeType . '.php';
 
-            file_put_contents($file, $this->buildWindowsStartFile($root, $type));
+            file_put_contents($file, $this->buildWindowsStartFile($root, $type, $masterToken));
 
             $files[] = $file;
         }
@@ -126,10 +218,11 @@ trait InteractsWithServer
         return $files;
     }
 
-    protected function buildWindowsStartFile(string $root, string $type): string
+    protected function buildWindowsStartFile(string $root, string $type, string $masterToken): string
     {
-        $rootLiteral = var_export(rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, true);
-        $typeLiteral = var_export($type, true);
+        $rootLiteral  = var_export(rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, true);
+        $typeLiteral  = var_export($type, true);
+        $tokenLiteral = var_export($masterToken, true);
 
         return <<<PHP
 <?php
@@ -154,6 +247,16 @@ require \$autoload;
 \$app = new \\think\\App({$rootLiteral});
 \$app->initialize();
 
+if (!defined('THINK_WORKER_MASTER_TOKEN')) {
+    define('THINK_WORKER_MASTER_TOKEN', {$tokenLiteral});
+}
+
+if (!in_array('-q', \$argv, true)) {
+    // 本进程将成为 Workerman master（负责监控并重启各 -q 子进程），
+    // 记录 PID 供孤儿子进程在 master 心跳丢失时回杀，避免重启风暴
+    file_put_contents(__DIR__ . '/master_' . THINK_WORKER_MASTER_TOKEN . '.pid', (string) getmypid());
+}
+
 \$manager = new \\think\\worker\\Manager(\$app);
 \$manager->prepareWorker({$typeLiteral});
 
@@ -161,7 +264,7 @@ require \$autoload;
 PHP;
     }
 
-    protected function launchWindows(array $files): void
+    protected function launchWindows(array $files, string $heartbeat): void
     {
         $command = array_merge([PHP_BINARY], $files);
 
@@ -172,8 +275,19 @@ PHP;
             throw new RuntimeException('Failed to start worker processes');
         }
 
+        // master 心跳：周期性刷新心跳文件，子进程据此感知 master 是否存活
+        while (true) {
+            if (!proc_get_status($process)['running']) {
+                break;
+            }
+
+            touch($heartbeat);
+            usleep(500000);
+        }
+
         $exitCode = proc_close($process);
 
+        // 不删除心跳文件：master 死后 mtime 停止刷新，孤儿子进程检测到后自行退出
         exit($exitCode);
     }
 
@@ -198,6 +312,11 @@ PHP;
         $worker->reloadable = false;
 
         $worker->onWorkerStart = function () {
+            // Windows 下检测 master 存活（hot update 进程不经 addWorker 创建，需单独注册）
+            if (DIRECTORY_SEPARATOR !== '/') {
+                $this->watchMasterAlive();
+            }
+
             $watcher = $this->container->make(Watcher::class);
             $watcher->watch(function () {
                 if (DIRECTORY_SEPARATOR === '/') {
@@ -210,20 +329,38 @@ PHP;
     }
 
     /**
-     * Windows 下写入重载标记，reloadable worker 轮询到后退出由 master 重启。
+     * Windows 下写入重载标记（内容为时间戳），reloadable worker 轮询到后退出由 master 重启。
      */
     protected function sendWinReload()
     {
-        file_put_contents($this->winReloadFlag(), time());
+        file_put_contents($this->winReloadFlag(), (string) microtime(true));
     }
 
+    /**
+     * 轮询重载标记：记录本进程已处理过的时间戳，仅对更新的标记重载。
+     * 不删除标记文件，避免多个 worker 进程竞争 unlink 导致部分进程错过重载；
+     * 启动时把现存标记视为已处理，防止重启后读到旧标记陷入无限重载。
+     */
     protected function watchWinReload()
     {
         $flag = $this->winReloadFlag();
 
-        Timer::add(1, function () use ($flag) {
-            if (is_file($flag)) {
-                @unlink($flag);
+        clearstatcache(true, $flag);
+
+        // 启动时已存在的标记属于上一轮重载，视为已处理
+        $lastFlag = is_file($flag) ? (float) file_get_contents($flag) : 0.0;
+
+        Timer::add(1, function () use ($flag, &$lastFlag) {
+            if (!is_file($flag)) {
+                return;
+            }
+
+            clearstatcache(true, $flag);
+
+            $flagTime = (float) file_get_contents($flag);
+
+            if ($flagTime > $lastFlag) {
+                $lastFlag = $flagTime;
                 Worker::stopAll(0, 'reload');
             }
         });
@@ -232,6 +369,59 @@ PHP;
     protected function winReloadFlag()
     {
         return runtime_path() . 'win' . DIRECTORY_SEPARATOR . 'reload.flag';
+    }
+
+    /**
+     * Windows 下检测 master 存活：
+     * 心跳文件不存在、token 不匹配（已被新 master 替换）或 mtime 超时（master 被强杀）时自动退出。
+     */
+    protected function watchMasterAlive()
+    {
+        // 直接运行生成的启动文件（无 master）时不检测
+        if (!defined('THINK_WORKER_MASTER_TOKEN')) {
+            return;
+        }
+
+        $heartbeat = $this->winHeartbeatFile();
+
+        Timer::add(3, function () use ($heartbeat) {
+            clearstatcache(true, $heartbeat);
+
+            $alive = is_file($heartbeat)
+                && trim((string) file_get_contents($heartbeat)) === THINK_WORKER_MASTER_TOKEN
+                && time() - (int) filemtime($heartbeat) < 15;
+
+            if (!$alive) {
+                // 先终止 Workerman master：master 被强杀时它仍会不断重启因心跳丢失而退出的
+                // 子进程，形成重启风暴；必须先让它停止监控再退出
+                $this->killWinMaster();
+                Worker::stopAll(0, 'master process lost');
+            }
+        });
+    }
+
+    /**
+     * 终止孤儿 Workerman master 进程（按启动文件记录的 PID，仅限 php 进程，防 PID 复用误杀）。
+     */
+    protected function killWinMaster(): void
+    {
+        $pidFile = dirname($this->winHeartbeatFile()) . DIRECTORY_SEPARATOR
+            . 'master_' . THINK_WORKER_MASTER_TOKEN . '.pid';
+
+        $pid = $this->readWinPidFile($pidFile);
+
+        if ($pid > 0) {
+            exec(sprintf('taskkill /FI "IMAGENAME eq php.exe" /F /PID %d 2>nul', $pid));
+        }
+
+        if (is_file($pidFile)) {
+            @unlink($pidFile);
+        }
+    }
+
+    protected function winHeartbeatFile()
+    {
+        return runtime_path() . 'win' . DIRECTORY_SEPARATOR . 'master.heartbeat';
     }
 
     /**

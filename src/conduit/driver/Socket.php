@@ -44,7 +44,7 @@ class Socket extends Driver
     public function prepare()
     {
         //启动服务端
-        Server::run($this->domain);
+        return Server::run($this->domain);
     }
 
     public function connect()

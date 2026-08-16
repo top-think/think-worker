@@ -35,6 +35,14 @@ trait InteractsWithConduit
     protected function prepareConduitServer(): void
     {
         $this->conduit = $this->container->make(Conduit::class);
-        $this->conduit->prepare();
+        $worker = $this->conduit->prepare();
+
+        // Windows 下检测 master 存活：conduit worker 不经 addWorker 创建，
+        // 缺失该检测时 master 被强杀后 conduit 进程会成为孤儿并一直占用端口
+        if (DIRECTORY_SEPARATOR !== '/' && $worker instanceof \think\worker\Worker) {
+            $worker->onWorkerStart = function () {
+                $this->watchMasterAlive();
+            };
+        }
     }
 }

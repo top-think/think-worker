@@ -40,7 +40,7 @@ trait InteractsWithWebsocket
     public function onHandShake(TcpConnection $connection, WorkerRequest $wkRequest)
     {
         $this->runInSandbox(function (App $app, Http $http, Event $event) use ($connection, $wkRequest) {
-            $request = $this->prepareRequest($wkRequest);
+            $request = $this->prepareRequest($wkRequest, $connection);
 
             $response = $http->run($request);
             if (!$response instanceof \think\worker\response\Websocket) {

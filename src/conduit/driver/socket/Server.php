@@ -98,5 +98,7 @@ class Server
 
         $worker->onMessage = [$server, 'onMessage'];
         $worker->onClose   = [$server, 'onClose'];
+
+        return $worker;
     }
 }

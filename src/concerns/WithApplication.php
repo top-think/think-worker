@@ -6,6 +6,7 @@ use Closure;
 use think\App;
 use think\worker\App as WorkerApp;
 use think\worker\Manager;
+use think\worker\Request as WorkerRequest;
 use think\worker\Sandbox;
 use Throwable;
 
@@ -27,6 +28,9 @@ trait WithApplication
 
             $this->app->bind(WorkerApp::class, App::class);
             $this->app->bind(Manager::class, $this);
+
+            // 上传文件包装为 worker 版 UploadedFile，move()/putFile() 在 Workerman 下可用
+            $this->app->bind('request', WorkerRequest::class);
 
             $this->app->initialize();
             $this->app->instance('request', $this->container->request);

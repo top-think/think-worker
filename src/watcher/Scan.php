@@ -39,6 +39,13 @@ class Scan implements Driver
         Timer::add(2, function () use ($callback) {
             $files = $this->findFiles();
 
+            // 文件数量变化说明有文件被删除，同样需要重载
+            if (count($files) !== count($this->files)) {
+                call_user_func($callback);
+                $this->files = $files;
+                return;
+            }
+
             foreach ($files as $path => $time) {
                 if (empty($this->files[$path]) || $this->files[$path] != $time) {
                     call_user_func($callback);
