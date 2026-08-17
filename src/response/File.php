@@ -6,6 +6,7 @@ use DateTime;
 use RuntimeException;
 use SplFileInfo;
 use think\Response;
+use Workerman\Protocols\Http\Response as WkResponse;
 
 class File extends Response
 {
@@ -67,6 +68,16 @@ class File extends Response
 
     public function setAutoContentType()
     {
+        // 优先按扩展名映射 MIME（与 Workerman/webman 的静态文件服务一致），
+        // finfo 会把 CSS 等纯文本文件误判为 text/plain，导致浏览器拒绝加载
+        $extension = strtolower($this->file->getExtension());
+        $mime      = (new WkResponse())->getMimeType($extension);
+
+        if ($mime !== 'application/octet-stream') {
+            $this->header['Content-Type'] = $mime;
+            return;
+        }
+
         if (extension_loaded('fileinfo')) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
@@ -98,11 +109,26 @@ class File extends Response
         return $this;
     }
 
+    /**
+     * ETag 静态缓存：path|mtime|size => etag，避免大文件每请求重复计算 sha1
+     * @var array<string, string>
+     */
+    protected static array $etagCache = [];
+
     public function setAutoEtag()
     {
-        $eTag = "W/\"" . sha1_file($this->file->getPathname()) . "\"";
+        $pathname = $this->file->getPathname();
+        $cacheKey = $pathname . '|' . $this->file->getMTime() . '|' . $this->file->getSize();
 
-        return $this->eTag($eTag);
+        if (!isset(static::$etagCache[$cacheKey])) {
+            if (count(static::$etagCache) > 1024) {
+                static::$etagCache = array_slice(static::$etagCache, -512, preserve_keys: true);
+            }
+
+            static::$etagCache[$cacheKey] = "W/\"" . sha1_file($pathname) . "\"";
+        }
+
+        return $this->eTag(static::$etagCache[$cacheKey]);
     }
 
     protected function sendData(string $data): void

@@ -11,9 +11,4 @@ class Worker extends \Workerman\Worker
         static::$logFile    = runtime_path() . 'worker.log';
         parent::init();
     }
-
-    protected static function parseCommand(): void
-    {
-
-    }
 }
