@@ -71,21 +71,26 @@ trait InteractsWithServer
 
     /**
      * 启动服务
+     * @param string $command Workerman 控制命令：start|stop|restart|reload|status|connections，可带 -d/-g 模式
      */
-    public function start(): void
+    public function start(string $command = 'start'): void
     {
         if (DIRECTORY_SEPARATOR === '/') {
-            $this->startLinux();
+            $this->startLinux($command);
         } else {
-            $this->startWindows();
+            $this->startWindows($command);
         }
     }
 
     /**
      * Linux 下启动：单文件多 worker + fork。
      */
-    protected function startLinux(): void
+    protected function startLinux(string $command = 'start'): void
     {
+        // argv 为 ['think','worker',...]，不含 Workerman 子命令，
+        // 通过 $command 注入，由 Workerman 原生 parseCommand 解析出 start/stop/reload 等动作
+        Worker::$command = $command;
+
         $this->initialize();
         $this->prepareIpc();
         $this->triggerEvent('init');
@@ -101,8 +106,13 @@ trait InteractsWithServer
     /**
      * Windows 下启动：为每个 worker 生成独立启动文件并以多进程方式拉起，由 Workerman master 监控。
      */
-    protected function startWindows(): void
+    protected function startWindows(string $command = 'start'): void
     {
+        // Workerman 的 stop/reload/status 依赖信号与 pid 文件，Windows 下不可用
+        if (!str_starts_with(trim($command), 'start')) {
+            throw new RuntimeException('Only "start" is supported on Windows; stop/reload/status require Linux signals.');
+        }
+
         // 使用随机 token 而非 PID：Windows PID 会被复用，复用碰撞会导致孤儿子进程误判 master 存活
         $masterToken = bin2hex(random_bytes(8));
         $heartbeat   = $this->winHeartbeatFile();
